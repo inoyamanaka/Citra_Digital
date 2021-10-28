@@ -6,14 +6,6 @@ from PIL import Image, ImageTk
 import os
 from ttkbootstrap import Style
 
-root = Tk()
-root.title("Image Browse App - 5200411434")
-root.geometry("875x620")
-root.config(bg="#323232")
-style = Style(theme='darkly')
-
-file_location=""
-
 def show_image():
     global file_location
     fln = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select Image File",
@@ -26,18 +18,16 @@ def show_image():
     preview_img(image)
 
 def mini_preview_ori(image):
-    original_image = image.resize((185, 185), Image.ANTIALIAS)
-    photoImg_ori = ImageTk.PhotoImage(original_image)
-    Label(left_frame, image=photoImg_ori).grid(row=1, column=0, padx=5, pady=5)
-    display.configure(image=photoImg_ori)
-    display.image = photoImg_ori
+    global image_l
+    image_l = image.resize((185, 185), Image.ANTIALIAS)
+    image_l = ImageTk.PhotoImage(image_l)
+    Label(left_frame, image=image_l).grid(row=0, column=0, padx=5, pady=20)
 
 def preview_img(image):
-    img_resize = image.resize((560, 475), Image.ANTIALIAS)
-    photoImg = ImageTk.PhotoImage(img_resize)
-    Label(right_frame, image=photoImg).grid(row=1, column=0, padx=5, pady=20)
-    display2.configure(image=photoImg)
-    display2.image = photoImg
+    global image_r
+    image_r = image.resize((560, 475), Image.ANTIALIAS)
+    image_r = ImageTk.PhotoImage(image_r)
+    Label(right_frame, image=image_r).grid(row=0, column=0, padx=5, pady=20)
 
 def img_to_normal():
     img = Image.open(str(file_location))
@@ -78,26 +68,35 @@ def treshold(var):
            else:
                treshold[i, j] = 1 * 255
 
-   hold = treshold.copy()
-   tresh_img = Image.fromarray(hold)
+   tresh_img = Image.fromarray(treshold)
    preview_img(tresh_img)
 
+# MEMBUAT WINDOW UNTUK MENAMPUNG WIDGET
+window = Tk()
+window.title("Image Browse App - 5200411434")
+window.geometry("875x620")
+window.config(bg="#323232")
+style = Style(theme='darkly')
+file_location=""
+
 # MEMBUAT LEFT DAN RIGHT FRAME
-left_frame = Frame(root, width=200, height=600, bg='#323232')
+left_frame = Frame(window, width=200, height=600, bg='#323232')
 left_frame.grid(row=0, column=0, padx=10, pady=5,sticky ='n')
-right_frame = Frame(root, width=650, height=400, bg='#323232')
+right_frame = Frame(window, width=650, height=400, bg='#323232')
 right_frame.grid(row=0, column=1, padx=10, pady=5)
 
-display = Label(left_frame)
-display2 = Label(right_frame)
-
 # BAGIAN UNTUK MENAMPILKAN DEFAULT IMAGE (JIKA GAMBAR BELUM DIPILIH)
-if file_location == "":
-    image = Image.open("resources/noimage.jpg")
-    # image di sebelah kiri
-    mini_preview_ori(image)
-    # image di sebelah kanan
-    preview_img(image)
+image = Image.open("resources/noimage.jpg")
+
+image_l = image.resize((185, 185), Image.ANTIALIAS)
+image_l = ImageTk.PhotoImage(image_l)
+def_img_l = Label(left_frame,image=image_l)
+def_img_l.grid(row=0, column=0, padx=5, pady=20)
+
+image_r = image.resize((560, 475), Image.ANTIALIAS)
+image_r = ImageTk.PhotoImage(image_r)
+def_img_r = Label(right_frame,image=image_r)
+def_img_r.grid(row=0, column=0, padx=5, pady=20)
 
 # BAGIAN LEFTFRAME
 tool_bar = Frame(left_frame, width=180, height=185,bg="#3f3f3f")
@@ -115,12 +114,12 @@ btn_to_normal.grid(row=3, column=0,pady=20,padx=3, ipadx=5)
 btn_exit= Button(tool_bar, text="Exit",width=25,height=2,bd=0,bg="#da4453",relief="solid", command=lambda:exit())
 btn_exit.grid(row=4, column=0,pady=20,padx=3, ipadx=5)
 
-label_treshold = Label(right_frame,text="Treshold",width=15,height=2,bd=0,bg="#5ea880",relief="solid",)
-label_treshold.grid(row=2, column=0,pady=4,sticky ='w')
-
 # BAGIAN RIGHT FRAME BAWAH ATAU DI DALEM RIGHT FRAME
+label_treshold = Label(right_frame,text="Treshold",width=15,height=2,bd=0,bg="#5ea880",relief="solid",)
+label_treshold.grid(row=1, column=0,pady=4,sticky ='w')
+
 inside_right_frame = Frame(right_frame,width=180, height=20)
-inside_right_frame.grid(row=3, column=0, padx=1, pady=5,sticky ='w')
+inside_right_frame.grid(row=2, column=0, padx=1, pady=5,sticky ='w')
 
 # MEMBUAT SLIDER
 scale = Scale(inside_right_frame,from_=0,to=255,orient=HORIZONTAL,length=255,bg="#5ea880",activebackground="#00c851",command=treshold)
@@ -130,4 +129,4 @@ scale.grid(row=0, column=0,pady=4,sticky ='w')
 label_parameter = Label(inside_right_frame,text="0")
 label_parameter.grid(row=0, column=1,pady=4,sticky ='w')
 
-root.mainloop()
+window.mainloop()
