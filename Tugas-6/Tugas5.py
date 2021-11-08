@@ -101,7 +101,7 @@ class Window_1:
         self.label_treshold.grid(row=0, column=0, pady=4, sticky='n',ipady=3)
 
         # SLIDER
-        current_value = IntVar()
+        current_value = 0
         self.scale = ttk.Scale(self.right_frame,variable=current_value, from_=0, to=255, orient=HORIZONTAL, length=250,style="success.Horizontal.TScale",command=self.treshold)
         self.scale.grid(row=1, column=0, pady=4, sticky='w')
 
@@ -160,7 +160,6 @@ class Window_1:
         self.fln = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select Image File",
                                               filetypes=(("PNG Files", "*.png"), ("JPG File", "*.jpg"),
                                               ("All Files", "*.*")))
-
         self.file_location = np.copy(self.fln)
         self.image = Image.open(self.fln)
         self.mini_preview_ori(self.image)
@@ -236,7 +235,7 @@ class Window_1:
     def image_negative(self):
         img_bgr = cv.imread(self.fln)
         img_rgb = cv.cvtColor(img_bgr,cv.COLOR_BGR2RGB)
-        img_neg = 1 - img_rgb
+        img_neg = 255 - img_rgb
         img_negative = Image.fromarray(img_neg)
         self.preview_img(img_negative)
 
