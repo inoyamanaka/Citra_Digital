@@ -8,38 +8,35 @@ import numpy as np
 class Window:
     def __init__(self):
         self.window = Tk()
-        self.window.geometry("1500x600+10+10")
+        self.window.geometry("1550x600+5+10")
         self.window.title("Browser-5200411434")
         style = Style(theme="darkly")
 
         # Membuat Frame
-        self.left_frame = Frame(self.window, bg='#323232')
-        self.left_frame.grid(row=0, column=0, padx=10, sticky='n')
+        self.left_frame = Frame(self.window, bg='#444444')
+        self.left_frame.grid(row=0, column=0, padx=10,pady=30, sticky='n')
 
-        self.middle_frame = Frame(self.window, bg='#323232')
-        self.middle_frame.grid(row=0, column=1, padx=10)
+        self.middle_frame = Frame(self.window, bg='#444444',width=200,height=100)
+        self.middle_frame.grid(row=0, column=1, padx=10,pady=10,sticky='n')
 
-        self.right_frame = Frame(self.window, bg='#323232',width=700)
-        self.right_frame.grid(row=0, column=2,ipadx=10 ,padx=10, sticky='n')
+        self.right_frame = Frame(self.window, bg='#444444',width=575,height=500)
+        self.right_frame.grid(row=0, column=2,padx=10,pady=30, sticky='n')
 
         # Image Background Kota dan Langit
         self.image_bg = Image.open("cloudy-city.png")
         self.image_bg = self.image_bg.resize((550, 500), Image.ANTIALIAS)
         self.image_bg = ImageTk.PhotoImage(self.image_bg)
         self.background = Label(self.left_frame, image=self.image_bg)
-        self.background.grid(row=0, column=0)
+        self.background.grid(row=0, column=0,pady=10,padx=10)
 
         # Image Pesawat jet
         self.image_pesawat = Image.open("jet.jpg")
         self.image_pesawat = self.image_pesawat.resize((150, 100), Image.ANTIALIAS)
         self.image_pesawat = ImageTk.PhotoImage(self.image_pesawat)
         self.pesawat = Label(self.middle_frame, image=self.image_pesawat)
-        self.pesawat.grid(row=0, column=0)
+        self.pesawat.grid(row=0, column=0,pady=5,sticky='n')
 
         # Mengatur Threshold dari pesawat
-        self.tool = Frame(self.middle_frame)
-        self.tool.grid(row=1, column=0)
-
         # SLIDER
         current_value_divide = IntVar()
         self.scale = ttk.Scale(self.middle_frame, from_=0, to=255, orient=HORIZONTAL, length=250,
@@ -47,13 +44,13 @@ class Window:
         self.scale.grid(row=2, column=0, pady=4, sticky='w',padx=10)
 
         # PARAMETER
-        self.label_parameter = Label(self.middle_frame, text="1.00")
-        self.label_parameter.grid(row=2, column=1, pady=4, sticky='w')
+        self.label_parameter = Label(self.middle_frame, text="0")
+        self.label_parameter.grid(row=2, column=1, pady=4,padx=5,ipadx=3,sticky='n')
 
         # BUTTON UNTUK APPLY
         self.btn_submit = ttk.Button(self.middle_frame, text="Apply", width=20, style='success.Outline.TButton',
                                    command=self.apply)
-        self.btn_submit.grid(row=3, column=0, pady=5, padx=5)
+        self.btn_submit.grid(row=3, column=0, pady=5, padx=3)
 
     def preview(self,image):
         self.image_r = image.resize((150, 100), Image.ANTIALIAS)
@@ -138,8 +135,7 @@ class Window:
         fusion = image_sky.resize((550, 500), Image.ANTIALIAS)
         self.sky = ImageTk.PhotoImage(fusion)
         self.fusion_image = Label(self.right_frame, image=self.sky)
-        self.fusion_image.grid(row=0, column=0,padx=5)
-
+        self.fusion_image.grid(row=0, column=0,padx=10,pady=10)
 
 main_window = Window()
 main_window.window.mainloop()
