@@ -8,6 +8,75 @@ from ttkbootstrap import Style
 from tkinter import ttk
 import math
 
+class Filter:
+    def __init__(self):
+        pass
+    def treshold(self, img,scale):
+        try:
+            self.label_parameter.config(text=str(int(scale.get())))
+            img = cv.imread("output.png", 0)
+
+        # Library Thresholding
+            _,treshold =cv.threshold(img,self.scale.get(),255,cv.THRESH_BINARY)
+            tresh_img = Image.fromarray(treshold)
+            self.preview_img(tresh_img)
+        except:
+            pass
+
+    def image_to_gray(self,img):
+        img = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+        return img
+
+    def image_to_hsv(self,img):
+        img = cv.cvtColor(img, cv.COLOR_RGB2HSV)
+        return img
+
+    def image_to_negative(self,img):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img_neg = 255 - img
+        return img_neg
+
+    def image_to_gaussian(self,img):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        figure_size = 9
+        img = cv.GaussianBlur(img, (figure_size, figure_size),0)
+        return img
+
+    def image_to_edge_detection(self,img):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+
+        mask = np.array([[-1, -1, -1],
+                         [-1,  8, -1],
+                         [-1, -1, -1]])
+
+        img = cv.filter2D(src=img, ddepth=-1, kernel=mask)
+        return  img
+
+    def image_to_mean_filter(self,img):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        mask = np.ones((3,3),dtype=int)
+        mask = mask / 9
+        img = cv.filter2D(src=img, ddepth=-1, kernel=mask)
+        return img
+
+    def image_to_sharpen(self,img):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        mask = np.array([[0,-1,0],
+                         [-1,5,-1],
+                         [0,-1,0]])
+
+        img = cv.filter2D(src=img, ddepth=-1, kernel=mask)
+        return img
+
+    def image_to_unsharp(self,img):
+        # img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        image2 = Image.fromarray(img.astype('uint8'))
+        new_image = image2.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
+
+        new_image.save("output.png")
+
+
+
 # MEMBUAT SEBUAH CLASS UNTUK WINDOWS_1
 class Window_1:
     # MEMBUAT CONSTRUCTOR CLASSNYA
@@ -22,9 +91,11 @@ class Window_1:
     # MENGATUR SIZE DARI WINDOWNYA DAN STYLE DARI BOOSTRAPNYA
         self.window = Tk()
         self.window.title("Image Browse App - 5200411434")
-        self.window.geometry("1380x720+1+1")
+        self.window.geometry("1400x750+1+1")
         self.window.config(bg="#323232")
         style = Style(theme='darkly')
+
+        self.filter_img = Filter()
 
     # MEMBUAT LEFT , MIDDLE , RIGHT FRAME
         self.left_frame = Frame(self.window, width=500, height=700, bg='#323232')
@@ -96,15 +167,21 @@ class Window_1:
         self.tool_bar_4 = Frame(self.left_frame, width=180, height=200, bg="#323232")
         self.tool_bar_4.grid(row=5, column=0, padx=10, pady=5, sticky='w')
 
+    # BUTTON UNTUK GANTI KE VIDEO
+        self.btn_window_2 = ttk.Button(self.tool_bar_4, text="VIDEO"
+                                                             "", width=20, style='warning.Outline.TButton',
+                                       command=lambda: Window_3(self.window))
+        self.btn_window_2.grid(row=0, column=0, pady=3, padx=5)
+
     # BUTTON UNTUK GANTI MENU
         self.btn_window_2 = ttk.Button(self.tool_bar_4, text="MENU", width=20, style='success.Outline.TButton',
                                        command=lambda: Window_2(self.window))
-        self.btn_window_2.grid(row=0, column=0, pady=5, padx=5)
+        self.btn_window_2.grid(row=1, column=0, pady=3, padx=5)
 
     # BUTTON UNTUK EXIT
         self.btn_exit = ttk.Button(self.tool_bar_4, text="EXIT", width=20, style='danger.Outline.TButton',
                                    command=self.exit)
-        self.btn_exit.grid(row=1, column=0, pady=5, padx=5)
+        self.btn_exit.grid(row=2, column=0, pady=3, padx=5)
 
 
 #==================================================================================================================#
@@ -124,7 +201,7 @@ class Window_1:
         # RB BAGIAN GRAYSCALE
         ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
         self.btn_to_gray = ttk.Radiobutton(self.tool_bar, text="Grayscale", value=1, style='info.TRadiobutton',
-                                           command=self.image_grayscale)
+                                           command=lambda:self.filter_apply("gray"))
         self.btn_to_gray.grid(row=1, column=0, padx=25, pady=10, sticky='w')
 
         # RB BAGIAN BLUE CHANNEL
@@ -144,7 +221,7 @@ class Window_1:
 
         # RB BAGIAN NEGATIVE IMAGE
         self.btn_negative = ttk.Radiobutton(self.tool_bar, text="Negative Image", value=5, style='info.TRadiobutton',
-                                            command=self.image_negative)
+                                            command=lambda:self.filter_apply("negative"))
         self.btn_negative.grid(row=3, column=0, pady=10, padx=25, sticky='w')
 
         # RB BAGIAN RED CHANNEL
@@ -155,35 +232,35 @@ class Window_1:
         # HSV
         self.btn_to_hsv = ttk.Radiobutton(self.tool_bar, text="HSV", value=9,
                                           style='info.TRadiobutton',
-                                          command=self.image_hsv)
+                                          command=lambda:self.filter_apply("hsv"))
         self.btn_to_hsv.grid(row=4, column=0, padx=25, pady=10, sticky='w')
 
         # SHARPEN FILTER
         self.btn_to_sharpen = ttk.Radiobutton(self.tool_bar, text="Sharpen Filter", value=7, style='info.TRadiobutton',
-                                          command=self.sharpen_filter)
+                                          command=lambda:self.filter_apply("sharpen"))
         self.btn_to_sharpen.grid(row=4, column=1, padx=25, pady=10, sticky='w')
 
         # MEDIAN FILTER
-        self.btn_to_median = ttk.Radiobutton(self.tool_bar, text="Median Filter", value=8,
+        self.btn_to_median = ttk.Radiobutton(self.tool_bar, text="Mean Filter", value=8,
                                           style='info.TRadiobutton',
-                                          command=self.box_blur)
+                                          command=lambda:self.filter_apply("mean_filter"))
         self.btn_to_median.grid(row=5, column=0, padx=25, pady=10, sticky='w')
 
 
         # MEAN / AVERAGE FILTER
         self.btn_to_mean = ttk.Radiobutton(self.tool_bar, text="Edge Detection", value=10,
                                           style='info.TRadiobutton',
-                                          command=self.edge_detection)
+                                          command=lambda:self.filter_apply("edge_detection"))
         self.btn_to_mean.grid(row=5, column=1, padx=25, pady=10, sticky='w')
 
         # GAUSSIAN FILTER
         self.btn_to_gaussian = ttk.Radiobutton(self.tool_bar, text="Gaussian Blur", value=11,
-                                          style='info.TRadiobutton',command=self.gaussian_blur)
+                                          style='info.TRadiobutton',command=lambda:self.filter_apply("gaussian"))
         self.btn_to_gaussian.grid(row=6, column=0, padx=25, pady=10, sticky='w')
 
         # UNSHARP FILTER
         self.btn_to_unsharp = ttk.Radiobutton(self.tool_bar, text="Unsharp", value=12,
-                                          style='info.TRadiobutton', command=self.unsharp)
+                                          style='info.TRadiobutton', command=lambda:self.filter_apply("unsharp"))
         self.btn_to_unsharp.grid(row=6, column=1, padx=25, pady=10, sticky='w')
 
 
@@ -426,7 +503,7 @@ class Window_1:
     def preview_img(self, image):
 
         if self.state == True:
-            self.window.geometry("1530x720+1+1")
+            self.window.geometry("1530x750+1+1")
 
             try:
                 self.image_ori = Image.open(self.fln)
@@ -454,7 +531,7 @@ class Window_1:
             self.gambar_c2.grid(row=1, column=1, padx=5, pady=10, ipadx=5)
 
         else :
-            self.window.geometry("1380x720+1+1")
+            self.window.geometry("1380x750+1+1")
 
             self.image_r = image.resize((680, 630), Image.ANTIALIAS)
             self.image_r = ImageTk.PhotoImage(self.image_r)
@@ -468,6 +545,36 @@ class Window_1:
                 # self.gambar_2.grid(row=0, column=0, padx=1, pady=1)
             except:
                 pass
+  # METHOD UNTUK MEMANGGIL FILTER DARI CLASS LAIN
+    def filter_apply(self,filter_set):
+        self.set_filter = filter_set
+        img = cv.imread(self.fln)
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+        if self.set_filter == "gray":
+            img_filter = self.filter_img.image_to_gray(img)
+        elif self.set_filter == "hsv":
+            img_filter = self.filter_img.image_to_hsv(img)
+        elif self.set_filter == "negative":
+            img_filter = self.filter_img.image_to_negative(img)
+        elif self.set_filter == "gaussian":
+            img_filter = self.filter_img.image_to_gaussian(img)
+        elif self.set_filter == "edge_detection":
+            img_filter = self.filter_img.image_to_edge_detection(img)
+        elif self.set_filter == "mean_filter":
+            img_filter = self.filter_img.image_to_mean_filter(img)
+        elif self.set_filter == "sharpen":
+            img_filter = self.filter_img.image_to_sharpen(img)
+        elif self.set_filter == "unsharp":
+            img_filter = self.filter_img.image_to_unsharp(img)
+
+        try:
+            cv.imwrite("output.png", img_filter)
+        except:
+            pass
+        img_display = Image.open("output.png")
+        self.preview_img(img_display)
+
 
   # METHOD UNTUK MENGHILANGKAN SEMUA FILTER YANG ADA PADA GAMBAR
     def image_normal(self):
@@ -503,104 +610,11 @@ class Window_1:
             B = Image.fromarray(B)
             self.preview_img(B)
 
-    def image_grayscale(self):
-        self.img = cv.imread("output.png")
-        grayscale = np.zeros(self.img.shape)
-
-        # SPLIT RGB CHANNELNYA
-        R = self.img[:, :, 0]
-        G = self.img[:, :, 1]
-        B = self.img[:, :, 2]
-
-        R = R * 0.299
-        G = G * 0.587
-        B = B * 0.114
-
-        total = R + G + B
-        grayscale = self.img.copy()
-
-        for i in range(3):
-            grayscale[:, :, i] = total
-
-        gray = Image.fromarray(grayscale)
-        gray.save("output.png")
-        self.preview_img(gray)
-
-    def image_hsv(self):
-        img = cv.imread('output.png')
-        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-        img_hsv_cv = cv.cvtColor(img, cv.COLOR_RGB2HSV)
-        cv.imwrite("output.png",img_hsv_cv)
-        img_hsv = Image.open("output.png")
-        self.preview_img(img_hsv)
-
-    def image_negative(self):
-        img_bgr = cv.imread(self.fln)
-        img_rgb = cv.cvtColor(img_bgr, cv.COLOR_BGR2RGB)
-        img_neg = 255 - img_rgb
-        img_negative = Image.fromarray(img_neg)
-        img_negative.save("output.png")
-        self.preview_img(img_negative)
-
-    def gaussian_blur(self):
-        image = cv.imread(self.fln)
-        image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-        figure_size = 9
-        new_image = cv.GaussianBlur(image, (figure_size, figure_size),0)
-
-        gaussian = Image.fromarray(new_image)
-        gaussian.save("output.png")
-        self.preview_img(gaussian)
-
-    def edge_detection(self):
-        img = cv.imread(self.fln)
-        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-
-        mask = np.array([[-1, -1, -1],
-                         [-1,  8, -1],
-                         [-1, -1, -1]])
-
-        edge_detection = cv.filter2D(src=img, ddepth=-1, kernel=mask)
-        self.filter_show(edge_detection)
-
-    def box_blur(self):
-        img = cv.imread(self.fln)
-        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-
-        mask = np.ones((3,3),dtype=int)
-        mask = mask / 9
-
-        box_blur = cv.filter2D(src=img, ddepth=-1, kernel=mask)
-        self.filter_show(box_blur)
-
-    def sharpen_filter(self):
-        img = cv.imread(self.fln)
-        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-
-        mask = np.array([[0,-1,0],
-                         [-1,5,-1],
-                         [0,-1,0]])
-
-        sharpener = cv.filter2D(src=img, ddepth=-1, kernel=mask)
-        self.filter_show(sharpener)
-
-
     def filter_show(self,image_filter):
         # MENYIMPAN HASILNYA
-        cv.imwrite('output.png', image_filter)
-        img = cv.imread('output.png')
-        img = Image.fromarray(img)
+        img = Image.fromarray(image_filter)
+        img.save("output.png")
         self.preview_img(img)
-
-
-    def unsharp(self):
-        image = cv.imread(self.fln)  # reads the image
-        image2 = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-        image2 = Image.fromarray(image2.astype('uint8'))
-        new_image = image2.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
-
-        new_image.save("output.png")
-        self.preview_img(new_image)
 
     def treshold(self, event):
         try:
@@ -824,7 +838,6 @@ class Window_1:
         try:
             os.remove("output.png")
             os.remove("target.jpg")
-            # os.remove("sample_filter.jpg")
             print("keluar dengan sukses")
         except:
             # print("Tidak ada gambar dengan nama itu")
@@ -968,13 +981,15 @@ class Window_2:
 # MEMBUAT SEBUAH CLASS UNTUK WINDOW ATAU MENU 2
 class Window_3:
     # MEMBUAT CONSTRUCTOR
-    def __init__(self):
+    def __init__(self,window):
         # MENGATUR UKURAN ATAU DIMENSI WINDOW
 
+        window.destroy()
         self.window_2 = Tk()
         self.window_2.title("Image Browse App - 5200411434")
         self.window_2.geometry("1295x650+25+25")
         style = Style(theme='darkly')
+        self.set_filter = Filter()
 
         # MEMBUAT LEFT ,MIDDLE DAN RIGHT FRAME
         self.left_frame = Frame(self.window_2, width=500, height=700, bg='#323232')
@@ -990,31 +1005,43 @@ class Window_3:
         self.tool_bar_2 = Frame(self.left_frame, width=180, height=200, bg="#3f3f3f")
         self.tool_bar_2.grid(row=1, column=0, padx=10, pady=50, sticky='w')
 
-        # MEMBUAT BUTTON UNTUK KEMBALI KE WINDOWS SEBELUMNYA
-        self.menu = ttk.Button(self.left_frame, text="Play", width=20, style='success.Outline.TButton',command=self.video)
-        self.menu.grid(row=0, column=0, pady=15, padx=15, columnspan=2)
+        # MEMBUAT BUTTON UNTUK PLAY
+        self.play = ttk.Button(self.left_frame, text="Play", width=20, style='success.Outline.TButton',
+                               command=self.video)
+        self.play.grid(row=0, column=0, pady=3, padx=5, columnspan=2)
 
+        # MEMBUAT BUTTON UNTUK PLAY
+        self.menu = ttk.Button(self.left_frame, text="MENU", width=20, style='success.Outline.TButton',
+                               command=self.video)
+        self.menu.grid(row=2, column=0, pady=3, padx=5, columnspan=2)
 
+        # MEMBUAT BUTTON UNTUK PLAY
+        self.exit = ttk.Button(self.left_frame, text="EXIT", width=20, style='danger.Outline.TButton',
+                               command=self.exit)
+        self.exit.grid(row=3, column=0, pady=3, padx=5, columnspan=2)
 
         # # RADIO BUTTON BUAT BAGIAN FILTERNYA
         self.tool_bar_1 = Frame(self.right_frame, bg="#3f3f3f")
         self.tool_bar_1.grid(row=0, column=0, padx=10, pady=10, sticky='w')
 
-        self.cap = cv.VideoCapture('uji.mp4')
-        self.lmain = Label(self.middle_frame)
+        self.is_camera_on = True
 
         ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
-        self.btn_to_gray = ttk.Radiobutton(self.tool_bar_1, text="Grayscale", value=1, style='info.TRadiobutton',command=lambda:self.set_filter("gray"))
+        self.btn_to_gray = ttk.Radiobutton(self.tool_bar_1, text="Grayscale", value=1, style='info.TRadiobutton',command=lambda:self.set_filters("gray"))
         self.btn_to_gray.grid(row=1, column=0, padx=25, pady=10, sticky='w')
 
-        self.btn_to_rgb = ttk.Radiobutton(self.tool_bar_1, text="RGB", value=2, style='info.TRadiobutton',command=lambda:self.set_filter("rgb"))
+        self.btn_to_rgb = ttk.Radiobutton(self.tool_bar_1, text="RGB", value=2, style='info.TRadiobutton',command=lambda:self.set_filters("rgb"))
         self.btn_to_rgb.grid(row=1, column=1, padx=25, pady=10, sticky='w')
 
-        self.btn_to_hsv = ttk.Radiobutton(self.tool_bar_1, text="HSV", value=3, style='info.TRadiobutton',command=lambda: self.set_filter("hsv"))
+        self.btn_to_hsv = ttk.Radiobutton(self.tool_bar_1, text="HSV", value=3, style='info.TRadiobutton',command=lambda: self.set_filters("hsv"))
         self.btn_to_hsv.grid(row=2, column=0, padx=25, pady=10, sticky='w')
 
+        self.btn_to_edge_detection = ttk.Radiobutton(self.tool_bar_1, text="Edge Detection", value=4, style='info.TRadiobutton',
+                                          command=lambda: self.set_filters("edge_detection"))
+        self.btn_to_edge_detection .grid(row=2, column=1, padx=25, pady=10, sticky='w')
+
         # LABEL THRESHOLD
-        self.label_treshold = ttk.Radiobutton(self.tool_bar_1, text="Threshold", style='info.TRadiobutton',value=4,command=lambda: self.set_filter("threshold"))
+        self.label_treshold = ttk.Radiobutton(self.tool_bar_1, text="Threshold", style='info.TRadiobutton',value=4,command=lambda: self.set_filters("threshold"))
         self.label_treshold.grid(row=3, column=0, pady=4, sticky='n', ipady=3)
 
         # SLIDER
@@ -1027,9 +1054,13 @@ class Window_3:
         self.label_parameter = Label(self.right_frame, text="0")
         self.label_parameter.grid(row=4, column=1, pady=4, sticky='w')
 
-    def set_filter(self,filter):
-        self.filter = filter
+    def set_filters(self,filter):
+        if self.is_camera_on == True:
+            self.cap = cv.VideoCapture(0)
+            self.lmain = Label(self.middle_frame)
+            self.is_camera_on = False
 
+        self.filters = filter
 
     def video(self):
 
@@ -1037,16 +1068,19 @@ class Window_3:
         self.frame = cv.flip(self.frame, 1)
         self.label_parameter.config(text=str(int(self.scale.get())))
 
-        if self.filter == "rgb":
+        if self.filters == "rgb":
             cv2image = cv.cvtColor(self.frame, cv.COLOR_BGR2RGB)
 
-        if self.filter == "gray":
-            cv2image = cv.cvtColor(self.frame, cv.COLOR_RGB2GRAY)
+        elif self.filters == "gray":
+            cv2image = self.set_filter.image_to_gray(self.frame)
 
-        if self.filter == "hsv":
-            cv2image = cv.cvtColor(self.frame, cv.COLOR_RGB2HSV)
+        elif self.filters == "edge_detection":
+            cv2image = self.set_filter.image_to_edge_detection(self.frame)
 
-        if self.filter == "threshold":
+        elif self.filters == "hsv":
+            cv2image = self.set_filter.image_to_hsv(self.frame)
+
+        elif self.filters == "threshold":
             self.frame = cv.cvtColor(self.frame, cv.COLOR_RGB2GRAY)
 
             ret, thresh1 = cv.threshold(self.frame, self.scale.get(), 255, cv.THRESH_BINARY)
@@ -1061,6 +1095,17 @@ class Window_3:
         self.lmain.configure(image=imgtk)
         self.lmain.grid(row=0, column=0, padx=5, pady=10)
         self.lmain.after(1, self.video)
+
+    def exit(self):
+        # MENGHAPUS FILE GAMBAR HASIL DARI PENJUMLAHAN DAN PENGURANGAN CITRA JIKA ADA
+        try:
+            os.remove("output.png")
+            os.remove("target.jpg")
+            print("keluar dengan sukses")
+        except:
+            # print("Tidak ada gambar dengan nama itu")
+            exit()
+        exit()
 
 
 # MEMBUAT SEBUAH OBJECT MAIN WINDOW
