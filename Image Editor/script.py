@@ -11,21 +11,34 @@ import math
 class Filter:
     def __init__(self):
         pass
-    def treshold(self, img,scale):
-        try:
-            self.label_parameter.config(text=str(int(scale.get())))
-            img = cv.imread("output.png", 0)
 
-        # Library Thresholding
-            _,treshold =cv.threshold(img,self.scale.get(),255,cv.THRESH_BINARY)
-            tresh_img = Image.fromarray(treshold)
-            self.preview_img(tresh_img)
-        except:
-            pass
+    def image_to_threshold(self,img,scale):
+        img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+        _,treshold = cv.threshold(img,scale.get(), 255, cv.THRESH_BINARY)
+        return treshold
+
+    def image_to_bright(self,img,scale):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img = img * scale.get()
+        return img
+
+    def image_to_dark(self,img,scale):
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img = img / scale.get()
+        return img
 
     def image_to_gray(self,img):
         img = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
         return img
+
+    def image_to_blue(self,img):
+       return  img[:, :, 2]
+
+    def image_to_green(self,img):
+        return img[:, :, 1]
+
+    def image_to_red(self,img):
+        return img[:, :, 0]
 
     def image_to_hsv(self,img):
         img = cv.cvtColor(img, cv.COLOR_RGB2HSV)
@@ -206,7 +219,7 @@ class Window_1:
 
         # RB BAGIAN BLUE CHANNEL
         self.btn_to_blue = ttk.Radiobutton(self.tool_bar, text="Blue Channel", value=2, style='info.TRadiobutton',
-                                           command=lambda: self.take_channel("blue"))
+                                           command=lambda:self.filter_apply("blue"))
         self.btn_to_blue.grid(row=1, column=1, padx=25, pady=10, sticky='w')
 
         # RB BAGIAN ORIGINAL IMAGE
@@ -216,7 +229,7 @@ class Window_1:
 
         # RB BAGIAN GREEN CHANNEL
         self.btn_to_green = ttk.Radiobutton(self.tool_bar, text="Green Channel", value=4, style='info.TRadiobutton',
-                                            command=lambda: self.take_channel("green"))
+                                            command=lambda:self.filter_apply("green"))
         self.btn_to_green.grid(row=2, column=1, padx=25, pady=10, sticky='w')
 
         # RB BAGIAN NEGATIVE IMAGE
@@ -226,7 +239,7 @@ class Window_1:
 
         # RB BAGIAN RED CHANNEL
         self.btn_to_red = ttk.Radiobutton(self.tool_bar, text="Red Channel", value=6, style='info.TRadiobutton',
-                                          command=lambda: self.take_channel("red"))
+                                          command=lambda:self.filter_apply("red"))
         self.btn_to_red.grid(row=3, column=1, padx=25, pady=10, sticky='w')
 
         # HSV
@@ -429,7 +442,7 @@ class Window_1:
         # SLIDER
         current_value = 0
         self.scale = ttk.Scale(self.right_frame, variable=current_value, from_=0, to=255, orient=HORIZONTAL, length=250,
-                               style="success.Horizontal.TScale", command=self.treshold)
+                               style="success.Horizontal.TScale",command=self.img_to_threshold)
         self.scale.grid(row=1, column=0, pady=4, sticky='w')
 
         # PARAMETER
@@ -446,7 +459,7 @@ class Window_1:
         current_value_multiply = IntVar()
         self.scale_multiply = ttk.Scale(self.right_frame, from_=1, to=10, orient=HORIZONTAL, length=250,
                                         style="danger.Horizontal.TScale", variable=current_value_multiply,
-                                        command=self.multiply)
+                                        command=self.img_to_bright)
         self.scale_multiply.grid(row=3, column=0, pady=4, sticky='w')
 
         # PARAMETER
@@ -463,7 +476,7 @@ class Window_1:
         current_value_divide = IntVar()
         self.scale_divide = ttk.Scale(self.right_frame, from_=1, to=10, orient=HORIZONTAL, length=250,
                                       style="info.Horizontal.TScale", variable=current_value_divide,
-                                      command=self.divide)
+                                      command=self.img_to_dark)
         self.scale_divide.grid(row=5, column=0, pady=4, sticky='w')
 
         # PARAMETER
@@ -546,6 +559,13 @@ class Window_1:
             except:
                 pass
   # METHOD UNTUK MEMANGGIL FILTER DARI CLASS LAIN
+    def img_to_threshold(self,event):
+        self.filter_apply("threshold")
+    def img_to_bright(self,event):
+        self.filter_apply("brightness")
+    def img_to_dark(self,event):
+        self.filter_apply("darkness")
+
     def filter_apply(self,filter_set):
         self.set_filter = filter_set
         img = cv.imread(self.fln)
@@ -553,6 +573,12 @@ class Window_1:
 
         if self.set_filter == "gray":
             img_filter = self.filter_img.image_to_gray(img)
+        elif self.set_filter == "red":
+            img_filter = self.filter_img.image_to_red(img)
+        elif self.set_filter == "green":
+            img_filter = self.filter_img.image_to_green(img)
+        elif self.set_filter == "blue":
+            img_filter = self.filter_img.image_to_blue(img)
         elif self.set_filter == "hsv":
             img_filter = self.filter_img.image_to_hsv(img)
         elif self.set_filter == "negative":
@@ -567,6 +593,15 @@ class Window_1:
             img_filter = self.filter_img.image_to_sharpen(img)
         elif self.set_filter == "unsharp":
             img_filter = self.filter_img.image_to_unsharp(img)
+        elif self.set_filter == "threshold":
+            self.label_parameter.config(text=str(int(self.scale.get())))
+            img_filter = self.filter_img.image_to_threshold(img, self.scale)
+        elif self.set_filter == "brightness":
+            self.label_parameter_multiply.config(text=f'{(self.scale_multiply.get()):.2f}')
+            img_filter = self.filter_img.image_to_bright(img, self.scale_multiply)
+        elif self.set_filter == "darkness":
+            self.label_parameter_multiply.config(text=f'{(self.scale_divide.get()):.2f}')
+            img_filter = self.filter_img.image_to_dark(img, self.scale_divide)
 
         try:
             cv.imwrite("output.png", img_filter)
@@ -596,81 +631,12 @@ class Window_1:
 
         self.preview_img(img)
 
-  # METHOD UNTUK FILTER GAMBAR YANG HANYA MENGAMBIL CHANNELL WARNA SAJA
-    def take_channel(self, color):
-        img = cv.imread(str(self.file_location))
-        (B, G, R) = cv.split(img)
-        if color == "red":
-            R = Image.fromarray(R)
-            self.preview_img(R)
-        elif color == "green":
-            G = Image.fromarray(G)
-            self.preview_img(G)
-        elif color == "blue":
-            B = Image.fromarray(B)
-            self.preview_img(B)
-
     def filter_show(self,image_filter):
         # MENYIMPAN HASILNYA
         img = Image.fromarray(image_filter)
         img.save("output.png")
         self.preview_img(img)
 
-    def treshold(self, event):
-        try:
-            self.label_parameter.config(text=str(int(self.scale.get())))
-            img = cv.imread("output.png", 0)
-
-        # Library Thresholding
-            _,treshold =cv.threshold(img,self.scale.get(),255,cv.THRESH_BINARY)
-
-        # Manual Thresholding
-            # treshold = np.zeros(img.shape)
-            #
-            # for i in range(img.shape[0]):
-            #     for j in range(img.shape[1]):
-            #         pixel = img[i, j]
-            #         if pixel < int(self.scale.get()):
-            #             treshold[i, j] = 0 * 255
-            #         else:
-            #             treshold[i, j] = 1 * 255
-
-            tresh_img = Image.fromarray(treshold)
-            self.preview_img(tresh_img)
-        except:
-            pass
-
-    # METHOD UNTUK MENGATUR MULTIPLY
-    def multiply(self, event):
-        try:
-            self.label_parameter_multiply.config(text=f'{(self.scale_multiply.get()):.2f}')
-
-            img = cv.imread("output.png")
-            img_multiply = img * self.scale_multiply.get()
-            cv.imwrite('target.jpg', img_multiply)
-
-            img = cv.imread('target.jpg')
-            img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-            img = Image.fromarray(img)
-            self.preview_img(img)
-        except:
-            pass
-
-    # METHOD UNTUK MENGATUR DIVIDE
-    def divide(self, event):
-        try:
-            self.label_parameter_divide.config(text=f'{(self.scale_divide.get()):.2f}')
-
-            img = cv.imread("output.png")
-            img_devided = img / self.scale_divide.get()
-            cv.imwrite('target.jpg', img_devided)
-
-            img = cv.imread('target.jpg')
-            img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-            img = Image.fromarray(img)
-            self.preview_img(img)
-        except:
-            pass
 
     def horizontal(self):
         if self.on_horizontal.get() == 0 or self.on_horizontal.get() == 1:
@@ -985,20 +951,20 @@ class Window_3:
         # MENGATUR UKURAN ATAU DIMENSI WINDOW
 
         window.destroy()
-        self.window_2 = Tk()
-        self.window_2.title("Image Browse App - 5200411434")
-        self.window_2.geometry("1295x650+25+25")
+        self.window_3 = Tk()
+        self.window_3.title("Image Browse App - 5200411434")
+        self.window_3.geometry("1295x650+25+25")
         style = Style(theme='darkly')
         self.set_filter = Filter()
 
         # MEMBUAT LEFT ,MIDDLE DAN RIGHT FRAME
-        self.left_frame = Frame(self.window_2, width=500, height=700, bg='#323232')
+        self.left_frame = Frame(self.window_3, width=500, height=700, bg='#323232')
         self.left_frame.grid(row=0, column=0, padx=15, pady=5)
 
-        self.middle_frame = Frame(self.window_2, width=700, height=550, bg='#323232')
+        self.middle_frame = Frame(self.window_3, width=700, height=550, bg='#323232')
         self.middle_frame.grid(row=0, column=1, padx=15, pady=15)
 
-        self.right_frame = Frame(self.window_2, width=300, height=550, bg='#323232')
+        self.right_frame = Frame(self.window_3, width=300, height=550, bg='#323232')
         self.right_frame.grid(row=0, column=2, padx=15, pady=15)
 
         # MEMBUAT TOOLBARS
@@ -1070,16 +1036,12 @@ class Window_3:
 
         if self.filters == "rgb":
             cv2image = cv.cvtColor(self.frame, cv.COLOR_BGR2RGB)
-
         elif self.filters == "gray":
             cv2image = self.set_filter.image_to_gray(self.frame)
-
         elif self.filters == "edge_detection":
             cv2image = self.set_filter.image_to_edge_detection(self.frame)
-
         elif self.filters == "hsv":
             cv2image = self.set_filter.image_to_hsv(self.frame)
-
         elif self.filters == "threshold":
             self.frame = cv.cvtColor(self.frame, cv.COLOR_RGB2GRAY)
 
