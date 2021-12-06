@@ -88,6 +88,79 @@ class Filter:
 
         new_image.save("output.png")
 
+class Image_operation:
+    def __int__(self):
+        pass
+
+    def image_to_rotated(self,img,angle):
+        input_pixels = img.load()
+        output_image = Image.new("RGB",size=img.size)
+        draw = ImageDraw.Draw(output_image)
+
+        angle = math.radians(angle)
+        center_x = img.width / 2
+        center_y = img.height / 2
+
+        for x in range(img.width):
+            for y in range(img.height):
+                # Compute coordinate in input image
+                xp = int((x - center_x) * math.cos(angle) - (y - center_y) * math.sin(angle) + center_x)
+                yp = int((x - center_x) * math.sin(angle) + (y - center_y) * math.cos(angle) + center_y)
+                if 0 <= xp < img.width and 0 <= yp < img.height:
+                    draw.point((x, y), input_pixels[xp, yp])
+
+        return output_image
+
+    def image_to_flip_horizontal(self,img):
+        input_pixels = img.load()
+        output_image = Image.new("RGB", img.size)
+        draw = ImageDraw.Draw(output_image)
+
+        for x in range(output_image.width):
+            for y in range(output_image.height):
+                xp = img.height - x - 1
+                draw.point((x, y), input_pixels[xp, y])
+
+        return output_image
+
+    def image_to_flip_vertical(self, img):
+        input_pixels = img.load()
+
+        output_image = Image.new("RGB", img.size)
+        draw = ImageDraw.Draw(output_image)
+
+        for x in range(output_image.width):
+            for y in range(output_image.height):
+                yp = img.height - y - 1
+                draw.point((x, y), input_pixels[x, yp])
+
+        return output_image
+
+    def image_to_trans(self,img,d_width,d_height):
+        src_img = cv.imread(img)
+        h, w = src_img.shape[:2]
+
+        x_distance = int(d_width)
+        y_distance = int(d_height)
+
+        ts_mat = np.array([[1, 0, x_distance], [0, 1, y_distance]])
+        out_img = np.zeros(src_img.shape, dtype='u1')
+
+        for i in range(h):
+            for j in range(w):
+                origin_x = j
+                origin_y = i
+                origin_xy = np.array([origin_x, origin_y, 1])
+
+                new_xy = np.dot(ts_mat, origin_xy)
+                new_x = new_xy[0]
+                new_y = new_xy[1]
+
+                if 0 < new_x < w and 0 < new_y < h:
+                    out_img[new_y, new_x] = src_img[i, j]
+
+        return out_img
+
 
 
 # MEMBUAT SEBUAH CLASS UNTUK WINDOWS_1
@@ -109,6 +182,7 @@ class Window_1:
         style = Style(theme='darkly')
 
         self.filter_img = Filter()
+        self.img_operation = Image_operation()
 
     # MEMBUAT LEFT , MIDDLE , RIGHT FRAME
         self.left_frame = Frame(self.window, width=500, height=700, bg='#323232')
@@ -293,22 +367,22 @@ class Window_1:
         rotate_var = IntVar()
         # Rotasi 90 Derajat
         self.btn_to_90 = ttk.Radiobutton(self.tool_bar_2_1, text="90 Derajat\t", value=7, style='info.TRadiobutton',
-                                         command=lambda: self.rotated(90))
+                                         command=lambda: self.operation_apply(90))
         self.btn_to_90.grid(row=1, column=0, pady=10, padx=25, sticky='w')
 
         # Rotasi 180 Derajat
         self.btn_to_180 = ttk.Radiobutton(self.tool_bar_2_1, text="180 Derajat", value=8, style='info.TRadiobutton',
-                                          command=lambda: self.rotated(180))
+                                          command=lambda: self.operation_apply(180))
         self.btn_to_180.grid(row=1, column=1, pady=10, padx=25, sticky='w')
 
         # Rotasi 270 Derajat
         self.btn_to_270 = ttk.Radiobutton(self.tool_bar_2_1, text="270 Derajat", value=9, style='info.TRadiobutton',
-                                          command=lambda: self.rotated(270))
+                                          command=lambda: self.operation_apply(270))
         self.btn_to_270.grid(row=2, column=0, pady=10, padx=25, sticky='w')
 
         # Rotasi 360 Derajat
         self.btn_to_360 = ttk.Radiobutton(self.tool_bar_2_1, text="360 Derajat", value=10, style='info.TRadiobutton',
-                                          command=lambda: self.rotated(360))
+                                          command=lambda: self.operation_apply(360))
         self.btn_to_360.grid(row=2, column=1, pady=10, padx=25, sticky='w')
 
         # COSTUME ANGLE
@@ -316,7 +390,7 @@ class Window_1:
         self.costume_angle.grid(row=3, column=0, sticky="w", padx=5)
 
         self.btn_angle = ttk.Button(self.tool_bar_2_1, text="Rotate", style='warning.Outline.TButton', width=6,
-                                    command=lambda: self.rotated("costume"))
+                                    command=lambda: self.operation_apply("custom"))
         self.btn_angle.grid(row=3, column=1, padx=5)
 
         # FRAME BAWAH BUAT KONTEN TRANSLASI
@@ -336,7 +410,7 @@ class Window_1:
         self.trans_height.grid(row=1, column=1, sticky="w", padx=2, pady=8)
 
         self.btn_trans = ttk.Button(self.tool_bar_2_2, text="Trans", style='warning.Outline.TButton', width=6,
-                                    command=self.translation_img)
+                                    command=lambda:self.operation_apply("translation"))
         self.btn_trans.grid(row=1, column=2, padx=1,sticky='e')
 
 # ==================================================================================================================#
@@ -360,12 +434,12 @@ class Window_1:
 
         self.btn_to_hor = ttk.Checkbutton(self.tool_bar, onvalue=1, offvalue=0, text="Horizontal",
                                           variable=self.on_horizontal, style='success.Squaretoggle.Toolbutton',
-                                          command=self.horizontal)
+                                          command=lambda:self.operation_apply("horizontal"))
         self.btn_to_hor.grid(row=1, column=0, padx=20, pady=10, sticky='w')
 
         self.btn_to_ver = ttk.Checkbutton(self.tool_bar, onvalue=1, offvalue=0, text="Vertical",
                                           variable=self.on_vertical, style='danger.Squaretoggle.Toolbutton',
-                                          command=self.vertical)
+                                          command=lambda:self.operation_apply("vertical"))
         self.btn_to_ver.grid(row=1, column=1, padx=25, pady=10, sticky='w')
 
 #==================================================================================================================#
@@ -606,7 +680,46 @@ class Window_1:
         try:
             cv.imwrite("output.png", img_filter)
         except:
-            pass
+            img_filter.save("output.png")
+        img_display = Image.open("output.png")
+        self.preview_img(img_display)
+
+    def operation_apply(self,operation_set):
+        self.set_operation = operation_set
+        img = cv.imread('output.png')
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        img = Image.fromarray(img)
+
+        # UNTUK IMAGE ROTATION
+        if self.set_operation == 90:
+            img_operate = self.img_operation.image_to_rotated(img,90)
+        elif self.set_operation == 180:
+            img_operate = self.img_operation.image_to_rotated(img,180)
+        elif self.set_operation == 270:
+            img_operate = self.img_operation.image_to_rotated(img,270)
+        elif self.set_operation == 360:
+            img_operate = self.img_operation.image_to_rotated(img,360)
+        elif self.set_operation == "custom":
+            img_operate = self.img_operation.image_to_rotated(img,int(self.costume_angle.get()))
+
+        # UNTUK IMAGE FLIP
+        if self.set_operation == "horizontal":
+            img_operate = self.img_operation.image_to_flip_horizontal(img)
+        elif self.set_operation == "vertical":
+            img_operate = self.img_operation.image_to_flip_vertical(img)
+
+        # UNTUK IMAGE TRANSLATION
+        if self.set_operation == "translation":
+            location = str(self.file_location)
+            d_width = self.trans_width.get()
+            d_height = self.trans_height.get()
+            img_operate = self.img_operation.image_to_trans(location,d_width,d_height)
+
+        try:
+            cv.imwrite("output.png", img_operate)
+        except:
+            img_operate.save("output.png")
+
         img_display = Image.open("output.png")
         self.preview_img(img_display)
 
@@ -636,119 +749,6 @@ class Window_1:
         img = Image.fromarray(image_filter)
         img.save("output.png")
         self.preview_img(img)
-
-
-    def horizontal(self):
-        if self.on_horizontal.get() == 0 or self.on_horizontal.get() == 1:
-            if os.path.isfile("output.png"):
-                location = "output.png"
-            else:
-                location = str(self.file_location)
-
-            input_image = Image.open(location)
-            input_pixels = input_image.load()
-
-            # Create output image
-            output_image = Image.new("RGB", input_image.size)
-            draw = ImageDraw.Draw(output_image)
-
-            for x in range(output_image.width):
-                for y in range(output_image.height):
-                    xp = input_image.height - x - 1
-                    draw.point((x, y), input_pixels[xp, y])
-
-            output_image.save("output.png")
-            img_horizon = cv.imread('output.png')
-            img = cv.cvtColor(img_horizon, cv.COLOR_BGR2RGB)
-            img = Image.fromarray(img)
-            self.preview_img(img)
-
-    def vertical(self):
-        if self.on_vertical.get() == 0 or self.on_vertical.get() == 1:
-            if os.path.isfile("output.png"):
-                location = "output.png"
-            else:
-                location = str(self.file_location)
-        input_image = Image.open(location)
-        input_pixels = input_image.load()
-
-        # Create output image
-        output_image = Image.new("RGB", input_image.size)
-        draw = ImageDraw.Draw(output_image)
-
-        for x in range(output_image.width):
-            for y in range(output_image.height):
-                yp = input_image.height - y - 1
-                draw.point((x, y), input_pixels[x, yp])
-
-        output_image.save("output.png")
-        img_verti = cv.imread('output.png')
-        img = cv.cvtColor(img_verti, cv.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
-        self.preview_img(img)
-
-    def rotated(self, angle):
-
-        input_image = Image.open("output.png")
-
-        if angle == "costume":
-            angle = int(self.costume_angle.get())
-            input_image = Image.open(str(self.file_location))
-
-        input_pixels = input_image.load()
-
-        # Create output image
-        output_image = Image.new("RGB", input_image.size)
-        draw = ImageDraw.Draw(output_image)
-
-        angle = math.radians(angle)
-        center_x = input_image.width / 2
-        center_y = input_image.height / 2
-
-        for x in range(input_image.width):
-            for y in range(input_image.height):
-                # Compute coordinate in input image
-                xp = int((x - center_x) * math.cos(angle) - (y - center_y) * math.sin(angle) + center_x)
-                yp = int((x - center_x) * math.sin(angle) + (y - center_y) * math.cos(angle) + center_y)
-                if 0 <= xp < input_image.width and 0 <= yp < input_image.height:
-                    draw.point((x, y), input_pixels[xp, yp])
-
-        output_image.save("output.png")
-        img_rotate = cv.imread('output.png')
-        img = cv.cvtColor(img_rotate, cv.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
-        self.preview_img(img)
-
-    def translation_img(self):
-        src_img = cv.imread(str(self.file_location))
-        shift_distance = (self.trans_width.get(), self.trans_height.get())
-
-        h, w = src_img.shape[:2]
-        x_distance = int(shift_distance[0])
-        y_distance = int(shift_distance[1])
-
-        ts_mat = np.array([[1, 0, x_distance], [0, 1, y_distance]])
-
-        out_img = np.zeros(src_img.shape, dtype='u1')
-
-        for i in range(h):
-            for j in range(w):
-                origin_x = j
-                origin_y = i
-                origin_xy = np.array([origin_x, origin_y, 1])
-
-                new_xy = np.dot(ts_mat, origin_xy)
-                new_x = new_xy[0]
-                new_y = new_xy[1]
-
-                if 0 < new_x < w and 0 < new_y < h:
-                    out_img[new_y, new_x] = src_img[i, j]
-
-        out_img = cv.cvtColor(out_img, cv.COLOR_BGR2RGB)
-        output_image = Image.fromarray(out_img)
-        output_image.save("output.png")
-        # img_trans = cv.imread('output.png')
-        self.preview_img(output_image)
 
     def save(self):
         image = Image.open("output.png")
@@ -976,12 +976,11 @@ class Window_3:
                                command=self.video)
         self.play.grid(row=0, column=0, pady=3, padx=5, columnspan=2)
 
-        # MEMBUAT BUTTON UNTUK PLAY
-        self.menu = ttk.Button(self.left_frame, text="MENU", width=20, style='success.Outline.TButton',
-                               command=self.video)
+        # MEMBUAT BUTTON UNTUK GANTI MENU
+        self.menu = ttk.Button(self.left_frame, text="MENU", width=20, style='success.Outline.TButton')
         self.menu.grid(row=2, column=0, pady=3, padx=5, columnspan=2)
 
-        # MEMBUAT BUTTON UNTUK PLAY
+        # MEMBUAT BUTTON UNTUK EXIT
         self.exit = ttk.Button(self.left_frame, text="EXIT", width=20, style='danger.Outline.TButton',
                                command=self.exit)
         self.exit.grid(row=3, column=0, pady=3, padx=5, columnspan=2)
@@ -1006,8 +1005,13 @@ class Window_3:
                                           command=lambda: self.set_filters("edge_detection"))
         self.btn_to_edge_detection .grid(row=2, column=1, padx=25, pady=10, sticky='w')
 
+        self.btn_to_sharp = ttk.Radiobutton(self.tool_bar_1, text="Sharpner", value=5,
+                                                     style='info.TRadiobutton',
+                                                     command=lambda: self.set_filters("sharpner"))
+        self.btn_to_sharp.grid(row=3, column=1, padx=25, pady=10, sticky='w')
+
         # LABEL THRESHOLD
-        self.label_treshold = ttk.Radiobutton(self.tool_bar_1, text="Threshold", style='info.TRadiobutton',value=4,command=lambda: self.set_filters("threshold"))
+        self.label_treshold = ttk.Radiobutton(self.tool_bar_1, text="Threshold", style='info.TRadiobutton',value=6,command=lambda: self.set_filters("threshold"))
         self.label_treshold.grid(row=3, column=0, pady=4, sticky='n', ipady=3)
 
         # SLIDER
@@ -1040,6 +1044,8 @@ class Window_3:
             cv2image = self.set_filter.image_to_gray(self.frame)
         elif self.filters == "edge_detection":
             cv2image = self.set_filter.image_to_edge_detection(self.frame)
+        elif self.filters == "sharpner":
+            cv2image = self.set_filter.image_to_sharpen(self.frame)
         elif self.filters == "hsv":
             cv2image = self.set_filter.image_to_hsv(self.frame)
         elif self.filters == "threshold":
