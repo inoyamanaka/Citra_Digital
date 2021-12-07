@@ -87,6 +87,33 @@ class Filter:
         new_image = image2.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
 
         new_image.save("output.png")
+        
+           def image_to_canny(self,img):
+        img = cv.Canny(img, 100, 200)
+        return img
+
+    def image_to_sobel(self,img):
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        img_gaussian = cv.GaussianBlur(gray, (3, 3), 0)
+
+        img_sobelx = cv.Sobel(img_gaussian, cv.CV_8U, 1, 0, ksize=5)
+        img_sobely = cv.Sobel(img_gaussian, cv.CV_8U, 0, 1, ksize=5)
+        img_sobel = img_sobelx + img_sobely
+
+        return img_sobel
+
+    def image_to_prewitt(self,img):
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        img_gaussian = cv.GaussianBlur(gray, (3, 3), 0)
+
+        kernelx = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
+        kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+        img_prewittx = cv.filter2D(img_gaussian, -1, kernelx)
+        img_prewitty = cv.filter2D(img_gaussian, -1, kernely)
+
+        img_prewitt = img_prewittx + img_prewitty
+
+        return img_prewitt
 
 class Image_operation:
     def __int__(self):
