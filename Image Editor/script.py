@@ -13,6 +13,30 @@ from tkscrolledframe import ScrolledFrame
 class Filter:
     def __init__(self):
         pass
+    def convolve(self,X, F):
+        X_height = X.shape[0]
+        X_width = X.shape[1]
+
+        F_height = F.shape[0]
+        F_width = F.shape[1]
+
+        H = (F_height - 1) // 2
+        W = (F_width - 1) // 2
+
+        out = np.zeros((X_height, X_width))
+        # iterate over all the pixel of image X
+        for i in np.arange(H, X_height - H):
+            for j in np.arange(W, X_width - W):
+                sum = 0
+                # iterate over the filter
+                for k in np.arange(-H, H + 1):
+                    for l in np.arange(-W, W + 1):
+                        # get the corresponding value from image and filter
+                        a = X[i + k, j + l]
+                        w = F[H + k, W + l]
+                        sum += (w * a)
+                out[i, j] = sum
+        return out
 
     def image_to_threshold(self,img,scale):
         img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
@@ -96,13 +120,26 @@ class Filter:
 
     def image_to_sobel(self,img):
         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+        Gx = np.array([[1.0, 0.0, -1.0], [2.0, 0.0, -2.0], [1.0, 0.0, -1.0]])
+        Gy = np.array([[1.0, 2.0, 1.0], [0.0, 0.0, 0.0], [-1.0, -2.0, -1.0]])
+
         img_gaussian = cv.GaussianBlur(gray, (3, 3), 0)
 
-        img_sobelx = cv.Sobel(img_gaussian, cv.CV_8U, 1, 0, ksize=5)
-        img_sobely = cv.Sobel(img_gaussian, cv.CV_8U, 0, 1, ksize=5)
-        img_sobel = img_sobelx + img_sobely
+        #=====================   CARA FROM SCARTCH  ============================
+        # sobel_x = self.convolve(img_gaussian,Gx)
+        # sobel_y = self.convolve(img_gaussian,Gy)
+        #========================================================================
+
+        # ===========================   LIBRARY ==================================
+        sobel_x = cv.filter2D(src=img_gaussian, ddepth=-1, kernel=Gx)
+        sobel_y = cv.filter2D(src=img_gaussian, ddepth=-1, kernel=Gy)
+        # ========================================================================
+        img_sobel = sobel_x + sobel_y
 
         return img_sobel
+
+
 
     def image_to_prewitt(self,img):
         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -110,11 +147,18 @@ class Filter:
 
         kernelx = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
         kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+
+        # =====================   CARA FROM SCARTCH  =============================
+        # img_prewittx = self.convolve(img_gaussian,kernelx)
+        # img_prewitty = self.convolve(img_gaussian,kernely)
+        # ========================================================================
+
+        # ===========================   LIBRARY ==================================
         img_prewittx = cv.filter2D(img_gaussian, -1, kernelx)
         img_prewitty = cv.filter2D(img_gaussian, -1, kernely)
+        # ========================================================================
 
         img_prewitt = img_prewittx + img_prewitty
-
         return img_prewitt
 
 class Image_operation:
