@@ -234,6 +234,25 @@ class Image_operation:
 
         return out_img
 
+    def image_to_resize(self,img,new_width,new_height):
+        input_pixels = img.load()
+        new_size = (new_width, new_height)
+
+        # Create output image
+        output_image = Image.new("RGB", new_size)
+        draw = ImageDraw.Draw(output_image)
+
+        x_scale = img.width / output_image.width
+        y_scale = img.height / output_image.height
+
+        # Copy pixels
+        for x in range(output_image.width):
+            for y in range(output_image.height):
+                xp, yp = math.floor(x * x_scale), math.floor(y * y_scale)
+                draw.point((x, y), input_pixels[xp, yp])
+
+        return output_image
+
 
 
 # MEMBUAT SEBUAH CLASS UNTUK WINDOWS_1
@@ -463,7 +482,7 @@ class Window_1:
 #==================================================== FILTER 3 ====================================================#
 #==================================================================================================================#
         # FRAME ATAS BUAT KONTEN ROTASI
-        self.tool_bar_2_1 = Frame(self.frame3, width=180, height=200, bg="#444444")
+        self.tool_bar_2_1 = Frame(self.frame3, width=180, height=200, bg="#3f3f3f")
         self.tool_bar_2_1.grid(row=0, column=0, padx=10, pady=10, sticky='w')
 
         self.icon_rotate = PhotoImage(file="resources/icon/rotation_icon.png")
@@ -492,12 +511,13 @@ class Window_1:
         self.btn_to_360.grid(row=2, column=1, pady=10, padx=25, sticky='w')
 
         # COSTUME ANGLE
+        space = Label(self.tool_bar_2_1,bg="#3f3f3f").grid(row=3,column=0)
         self.costume_angle = ttk.Entry(self.tool_bar_2_1, style='info.TEntry')
-        self.costume_angle.grid(row=3, column=0, sticky="w", padx=5)
+        self.costume_angle.grid(row=4, column=0, sticky="w", padx=15,pady=10)
 
         self.btn_angle = ttk.Button(self.tool_bar_2_1, text="Rotate", style='warning.Outline.TButton', width=6,
                                     command=lambda: self.operation_apply("custom"))
-        self.btn_angle.grid(row=3, column=1, padx=5)
+        self.btn_angle.grid(row=4, column=1, padx=5)
 
         # FRAME BAWAH BUAT KONTEN TRANSLASI
         self.tool_bar_2_2 = Frame(self.frame3, width=180, height=200, bg="#444444")
@@ -507,13 +527,13 @@ class Window_1:
         self.translation = Label(self.tool_bar_2_2, image=self.icon_rotate,width=75, text=" Translation", compound='left', bg="#FD7014")
         self.translation.grid(row=0, column=1, ipadx=35,padx=5,pady=3, columnspan=2,sticky="e")
 
-        self.trans_width = ttk.Entry(self.tool_bar_2_2,text="width", style='info.TEntry',width=8)
+        self.trans_width = ttk.Entry(self.tool_bar_2_2, style='info.TEntry',width=8)
         self.trans_width.insert(0, 'width')
-        self.trans_width.grid(row=1, column=0, sticky="e", padx=5,pady=8)
+        self.trans_width.grid(row=1, column=0, sticky="e", padx=13,pady=8)
 
         self.trans_height = ttk.Entry(self.tool_bar_2_2, style='info.TEntry', width=8)
         self.trans_height.insert(0, 'height')
-        self.trans_height.grid(row=1, column=1, sticky="w", padx=2, pady=8)
+        self.trans_height.grid(row=1, column=1, sticky="w", padx=4, pady=8)
 
         self.btn_trans = ttk.Button(self.tool_bar_2_2, text="Trans", style='warning.Outline.TButton', width=6,
                                     command=lambda:self.operation_apply("translation"))
@@ -526,11 +546,11 @@ class Window_1:
         # RADIO BUTTON BUAT BAGIAN FILTERNYA
 
         # MEMBUAT FRAME UNTUK MENAMPUNG SESUATU YANG BERHUBUNGAN DENGAN FLIP
-        self.tool_bar = Frame(self.frame4, width=180, height=200, bg="#444444")
-        self.tool_bar.grid(row=4, column=0, padx=10, pady=10, sticky='w')
+        self.tool_bar_4 = Frame(self.frame4, width=180, height=200, bg="#444444")
+        self.tool_bar_4.grid(row=4, column=0, padx=10, pady=10, sticky='w')
 
         self.icon_flip = PhotoImage(file="resources/icon/flip_icon.png")
-        self.flip = Label(self.tool_bar, image=self.icon_flip, text=" Flip", compound='left', bg="#FD7014")
+        self.flip = Label(self.tool_bar_4, image=self.icon_flip, text=" Flip", compound='left', bg="#FD7014")
         self.flip.grid(row=0, column=0, ipadx=35, columnspan=2)
 
         # CB BUAT FLIP
@@ -538,22 +558,40 @@ class Window_1:
         self.on_horizontal = IntVar()
         self.on_vertical = IntVar()
 
-        self.btn_to_hor = ttk.Checkbutton(self.tool_bar, onvalue=1, offvalue=0, text="Horizontal",
+        self.btn_to_hor = ttk.Checkbutton(self.tool_bar_4, onvalue=1, offvalue=0, text="Horizontal",
                                           variable=self.on_horizontal, style='success.Squaretoggle.Toolbutton',
                                           command=lambda:self.operation_apply("horizontal"))
-        self.btn_to_hor.grid(row=1, column=0, padx=20, pady=10, sticky='w')
+        self.btn_to_hor.grid(row=1, column=0, padx=20, pady=10,ipadx=11, sticky='w')
 
-        self.btn_to_ver = ttk.Checkbutton(self.tool_bar, onvalue=1, offvalue=0, text="Vertical",
+        self.btn_to_ver = ttk.Checkbutton(self.tool_bar_4, onvalue=1, offvalue=0, text="Vertical",
                                           variable=self.on_vertical, style='danger.Squaretoggle.Toolbutton',
                                           command=lambda:self.operation_apply("vertical"))
         self.btn_to_ver.grid(row=1, column=1, padx=25, pady=10, sticky='w')
 
+        # FRAME BAWAH BUAT KONTEN SCALING / RESIZE
+        self.tool_bar_4_2 = Frame(self.frame4, width=180, height=200, bg="#444444")
+        self.tool_bar_4_2.grid(row=1, column=0, padx=5, pady=10, ipadx=30, sticky='w')
+
+        self.icon_resize = PhotoImage(file="resources/icon/resize_icon.png")
+        self.resize = Label(self.tool_bar_4_2, image=self.icon_resize, width=75, text=" Resize",
+                                 compound='left', bg="#FD7014")
+        self.resize.grid(row=0, column=1, ipadx=35, padx=5, pady=3, columnspan=2, sticky="e")
+
+        self.new_width = ttk.Entry(self.tool_bar_4_2,style='info.TEntry', width=8)
+        self.new_width.insert(0, 'width')
+        self.new_width.grid(row=1, column=0, sticky="e", padx=13, pady=8)
+
+        self.new_height = ttk.Entry(self.tool_bar_4_2, style='info.TEntry', width=8)
+        self.new_height.insert(0, 'height')
+        self.new_height.grid(row=1, column=1, sticky="w", padx=4, pady=8)
+
+        self.btn_resize = ttk.Button(self.tool_bar_4_2, text="Resize", style='warning.Outline.TButton', width=6,
+                                    command=lambda: self.operation_apply("resize"))
+        self.btn_resize.grid(row=1, column=2, padx=1, sticky='e')
+
 #==================================================================================================================#
 #==================================================== FILTER 4 ====================================================#
 #==================================================================================================================#
-        # SOON
-        # self.tool_bar_frame_4 = Frame(self.frame4, width=180, height=200, bg="#444444")
-        # self.tool_bar_frame_4.grid(row=2, column=0, padx=5, pady=10, ipadx=30,sticky='w')
 
 #---------------------------------- MIDDLE FRAME SECTION ----------------------------------#
         """DI BAWAH INI MERUPAKAN SOURCE UNTUK BAGIAN CODE YANG ADA 
@@ -561,7 +599,8 @@ class Window_1:
            - PREVIEW GAMBAR
            - BUTTON SAVE
            - BUTTON COMPARE
-           - BUTTON PREVIEW """
+           - BUTTON PREVIEW
+           - BUTTON DELETE """
 #---------------------------------- MIDDLE FRAME SECTION ----------------------------------#
 
     # FRAME UNTUK MENAMPUNG BUTTON
@@ -576,9 +615,13 @@ class Window_1:
         self.btn_to_compare = ttk.Button(self.tool_mid, text="COMPARE IMAGE", style='info.TButton', command=self.compare)
         self.btn_to_compare.grid(row=0, column=1, sticky='w', padx=5, pady=5)
 
+    # MEMBUAT BUTTON UNTUK MEMBANDINGKAN GAMBAR ORI DAN GAMBAR HASIL FILTER
+        self.btn_to_delete = ttk.Button(self.tool_mid, text="DELETE IMAGE", style='info.TButton',command=self.input_nama)
+        self.btn_to_delete.grid(row=0, column=2, sticky='w', padx=5, pady=5)
+
     # MEMBUAT BUTTON UNTUK MENAMPILKAN GAMBAR HASIL FILTER SAJA
         self.btn_to_preview = ttk.Button(self.tool_mid, text="PREVIEW", style='info.TButton',command=self.preview_layout)
-        self.btn_to_preview.grid(row=0, column=2, sticky='w', padx=5, pady=5)
+        self.btn_to_preview.grid(row=0, column=3, sticky='w', padx=5, pady=5)
 
     # BAGIAN UNTUK MENAMPILKAN DEFAULT IMAGE (JIKA GAMBAR BELUM DIPILIH)
         self.image_def = Image.open("resources/noimage.jpg")
@@ -602,13 +645,6 @@ class Window_1:
         self.image_r = ImageTk.PhotoImage(self.image_r)
         self.gambar_2 = Label(self.gambar_frame, image=self.image_r)
         self.gambar_2.grid(row=0, column=0, padx=5, pady=7)
-
-
-        # self.middle_frame_1 = Frame(self.middle_frame)
-        # self.middle_frame_1.grid(row=0, column=0)
-
-
-
 
 #---------------------------------- RIGHT FRAME SECTION ----------------------------------#
         """DI BAWAH INI MERUPAKAN SOURCE UNTUK BAGIAN CODE YANG ADA 
@@ -767,6 +803,8 @@ class Window_1:
             img_filter = self.filter_img.image_to_sharpen(img)
         elif self.set_filter == "Unsharp":
             img_filter = self.filter_img.image_to_unsharp(img)
+
+
         elif self.set_filter == "Threshold":
             self.label_parameter.config(text=str(int(self.scale.get())))
             img_filter = self.filter_img.image_to_threshold(img, self.scale)
@@ -774,7 +812,7 @@ class Window_1:
             self.label_parameter_multiply.config(text=f'{(self.scale_multiply.get()):.2f}')
             img_filter = self.filter_img.image_to_bright(img, self.scale_multiply)
         elif self.set_filter == "Darkness":
-            self.label_parameter_multiply.config(text=f'{(self.scale_divide.get()):.2f}')
+            self.label_parameter_divide.config(text=f'{(self.scale_divide.get()):.2f}')
             img_filter = self.filter_img.image_to_dark(img, self.scale_divide)
 
         elif self.set_filter == "Canny":
@@ -831,6 +869,14 @@ class Window_1:
             d_width = self.trans_width.get()
             d_height = self.trans_height.get()
             img_operate = self.img_operation.image_to_trans(location,d_width,d_height)
+
+        # UNTUK IMAGE RESIZED
+
+        if self.set_operation == "resize":
+            new_width = int(self.new_width.get())
+            new_height = int(self.new_height.get())
+            img_operate = self.img_operation.image_to_resize(img, new_width, new_height)
+
 
         try:
             cv.imwrite(f"output{self.i}.png", img_operate)
@@ -926,8 +972,30 @@ class Window_1:
                 pass
         self.kolom = 0
 
+    def input_nama(self):
+        top = Toplevel(self.window)
+        top.geometry("450x150")
+        top.title("Child Window")
+        Label(top,text="nama filter :").grid(row=0,column=0)
+        nama_filter = ttk.Entry(top, style='info.TEntry', width=25)
+        nama_filter.insert(0,'')
+        nama_filter.grid(row=0, column=1, sticky="w", padx=2, pady=8)
+
+        Button(top,text='delete',command=lambda:self.hapus_gambar(nama_filter.get())).grid(row=0,column=2)
+
+    def hapus_gambar(self,nama_filter):
+        index = 0
+        for i in self.nama_filter:
+            if i == nama_filter:
+                self.nama_filter.remove(nama_filter)
+                self.img_list.pop(index)
+                self.img_path.pop(index)
+                self.compare()
+            index += 1
+
     def preview_layout(self):
         self.state = False
+        self.compare_state = False
         try:
             self.gambar_frame.destroy()
             self.gambar_c2.destroy()
@@ -949,6 +1017,7 @@ class Window_1:
         # MENGHAPUS FILE GAMBAR HASIL DARI PENJUMLAHAN DAN PENGURANGAN CITRA JIKA ADA
         try:
             os.remove("output.png")
+            os.remove("outputori.png")
             for i in range (0,10):
                 os.remove(f"output{i}.png")
         except:
