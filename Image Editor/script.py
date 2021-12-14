@@ -139,8 +139,6 @@ class Filter:
 
         return img_sobel
 
-
-
     def image_to_prewitt(self,img):
         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
         img_gaussian = cv.GaussianBlur(gray, (3, 3), 0)
@@ -161,6 +159,27 @@ class Filter:
         img_prewitt = img_prewittx + img_prewitty
         return img_prewitt
 
+    def image_to_erosi(self,img,kernel):
+        imgErode = cv.erode(img, kernel=kernel, iterations=1)
+        return imgErode
+
+    def image_to_dilasi(self,img,kernel):
+        imgDilate = cv.dilate(img, kernel=kernel, iterations=1)
+        return imgDilate
+
+    def image_to_opening(self,img):
+        se = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+        # img_canny = self.image_to_canny(img)
+        img = self.image_to_erosi(img,se)
+        img = self.image_to_dilasi(img,se)
+        return img
+
+    def image_to_closing(self,img):
+        se = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+        img_canny = self.image_to_canny(img)
+        img = self.image_to_dilasi(img_canny,se)
+        img = self.image_to_erosi(img,se)
+        return img
 class Image_operation:
     def __int__(self):
         pass
@@ -269,13 +288,13 @@ class Window_1:
     # MENGATUR SIZE DARI WINDOWNYA DAN STYLE DARI BOOSTRAPNYA
         self.window = Tk()
         self.window.title("Image Browse App - 5200411434")
-        self.window.geometry("1400x750+1+1")
+        self.window.geometry("1400x800+1+1")
         self.window.config(bg="#323232")
         style = Style(theme='darkly')
+        rb_s = 'info.TRadiobutton'
 
         self.filter_img = Filter()
         self.img_operation = Image_operation()
-
 
     # MEMBUAT LEFT , MIDDLE , RIGHT FRAME
         self.left_frame = tk.Frame(self.window, width=500, height=700, bg='#323232')
@@ -286,11 +305,6 @@ class Window_1:
 
         self.right_frame = tk.Frame(self.window, width=100, height=550, bg='#222222')
         self.right_frame.grid(row=0, column=2, padx=5, pady=15, sticky='n')
-
-
-        #========#
-
-
         # -------------------------- LEFT FRAME SECTION-----------------------#
         """DI BAWAH INI MERUPAKAN SOURCE UNTUK BAGIAN CODE YANG ADA 
            PADA MIDDLE FRAME ATAU FRAME TENGAH YANG MENCANGKUP
@@ -306,12 +320,16 @@ class Window_1:
                 8.  AVERAGE 
                 9.  MEDIAN 
                 10. UNSHARP
+                11. CANNY DETECTION
+                12. SOBEL DETECTION
+                13. PREWITT DETECTION
            - ROTATE IMAGE
            - TRANSLASI IMAGE
            - FLIP HORIZONTAL DAN FLIP VERIKAL
+           - RESIZE IMAGE
            - BUTTON GANTI MENU
            - BUTTON EXIT """
-        # -------------------------- LEFT FRAME SECTION-----------------------#
+        # -------------------------- LEFT FRAME SECTION------------------------#
 
     # LABEL UNTUK MENAMPUNG BUTTON SEARCH IMAGE
         self.gambar = Label(self.left_frame, height=13, width=25)
@@ -380,73 +398,94 @@ class Window_1:
 
         self.icon_filter = PhotoImage(file="resources/icon/filter_icon.png")
         self.filter = Label(self.tool_bar, image=self.icon_filter, text="Filter", compound='left', bg="#FD7014")
-        self.filter.grid(row=0, column=0, ipadx=35, columnspan=2,stick="n")
+        self.filter.grid(row=0, column=0, ipadx=120,stick="w",columnspan=3)
 
         # RB BAGIAN GRAYSCALE
         ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
-        self.btn_to_gray = ttk.Radiobutton(self.tool_bar, text="Grayscale", value=1, style='info.TRadiobutton',
+        self.btn_to_gray = ttk.Radiobutton(self.tool_bar, text="Grayscale", value=1, style=rb_s,
                                            command=lambda:self.filter_apply("Gray"))
-        self.btn_to_gray.grid(row=1, column=0, padx=25, pady=10, sticky='w',ipadx=24)
+        self.btn_to_gray.grid(row=1, column=0, pady=15,padx=5, sticky='w')
 
         # RB BAGIAN BLUE CHANNEL
-        self.btn_to_blue = ttk.Radiobutton(self.tool_bar, text="Blue Channel", value=2, style='info.TRadiobutton',
-                                           command=lambda:self.filter_apply("Blue"))
-        self.btn_to_blue.grid(row=1, column=1, padx=25, pady=10, sticky='w')
+        self.btn_to_negative = ttk.Radiobutton(self.tool_bar, text="Negative", value=2, style=rb_s,
+                                           command=lambda:self.filter_apply("Negative"))
+        self.btn_to_negative.grid(row=1, column=1, pady=15,padx=5, sticky='w')
 
         # RB BAGIAN ORIGINAL IMAGE
-        self.btn_to_normal = ttk.Radiobutton(self.tool_bar, text="Original", value=3, style='info.TRadiobutton',
+        self.btn_to_normal = ttk.Radiobutton(self.tool_bar, text="Original", value=3, style=rb_s,
                                              command=self.image_normal)
-        self.btn_to_normal.grid(row=2, column=0, pady=10, padx=25, sticky='w')
+        self.btn_to_normal.grid(row=1, column=2, pady=15,padx=5, sticky='w')
 
         # RB BAGIAN GREEN CHANNEL
-        self.btn_to_green = ttk.Radiobutton(self.tool_bar, text="Green Channel", value=4, style='info.TRadiobutton',
+        self.btn_to_green = ttk.Radiobutton(self.tool_bar, text="Green Channel", value=4, style=rb_s,
                                             command=lambda:self.filter_apply("Green"))
-        self.btn_to_green.grid(row=2, column=1, padx=25, pady=10, sticky='w')
+        self.btn_to_green.grid(row=2, column=0, pady=15,padx=5, sticky='w')
 
         # RB BAGIAN NEGATIVE IMAGE
-        self.btn_negative = ttk.Radiobutton(self.tool_bar, text="Negative Image", value=5, style='info.TRadiobutton',
-                                            command=lambda:self.filter_apply("Negative"))
-        self.btn_negative.grid(row=3, column=0, pady=10, padx=25, sticky='w')
+        self.btn_blue = ttk.Radiobutton(self.tool_bar, text="Blue Channel", value=5, style=rb_s,
+                                            command=lambda:self.filter_apply("Blue"))
+        self.btn_blue.grid(row=2, column=1, pady=15,padx=5, sticky='w')
 
         # RB BAGIAN RED CHANNEL
-        self.btn_to_red = ttk.Radiobutton(self.tool_bar, text="Red Channel", value=6, style='info.TRadiobutton',
+        self.btn_to_red = ttk.Radiobutton(self.tool_bar, text="Red Channel", value=6, style=rb_s,
                                           command=lambda:self.filter_apply("Red"))
-        self.btn_to_red.grid(row=3, column=1, padx=25, pady=10, sticky='w')
+        self.btn_to_red.grid(row=2, column=2, pady=15,padx=5, sticky='w')
 
         # HSV
-        self.btn_to_hsv = ttk.Radiobutton(self.tool_bar, text="HSV", value=9,
-                                          style='info.TRadiobutton',
-                                          command=lambda:self.filter_apply("Hsv"))
-        self.btn_to_hsv.grid(row=4, column=0, padx=25, pady=10, sticky='w')
+        self.btn_to_unsharp= ttk.Radiobutton(self.tool_bar, text="Unsharp", value=9,
+                                          style=rb_s,command=lambda:self.filter_apply("Unsharp"))
+        self.btn_to_unsharp.grid(row=3, column=0, pady=15,padx=5, sticky='w')
 
         # SHARPEN FILTER
-        self.btn_to_sharpen = ttk.Radiobutton(self.tool_bar, text="Sharpen Filter", value=7, style='info.TRadiobutton',
+        self.btn_to_sharpen = ttk.Radiobutton(self.tool_bar, text="Sharpen Filter", value=7, style=rb_s,
                                           command=lambda:self.filter_apply("Sharpen"))
-        self.btn_to_sharpen.grid(row=4, column=1, padx=25, pady=10, sticky='w')
+        self.btn_to_sharpen.grid(row=3, column=1, pady=15,padx=5, sticky='w')
 
         # MEDIAN FILTER
         self.btn_to_median = ttk.Radiobutton(self.tool_bar, text="Mean Filter", value=8,
-                                          style='info.TRadiobutton',
-                                          command=lambda:self.filter_apply("Mean_filter"))
-        self.btn_to_median.grid(row=5, column=0, padx=25, pady=10, sticky='w')
+                                          style=rb_s,command=lambda:self.filter_apply("Mean_filter"))
+        self.btn_to_median.grid(row=3, column=2, pady=15,padx=5, sticky='w')
 
 
         # MEAN / AVERAGE FILTER
         self.btn_to_mean = ttk.Radiobutton(self.tool_bar, text="Edge Detection", value=10,
-                                          style='info.TRadiobutton',
-                                          command=lambda:self.filter_apply("Edge_detection"))
-        self.btn_to_mean.grid(row=5, column=1, padx=25, pady=10, sticky='w')
+                                          style=rb_s,command=lambda:self.filter_apply("Edge_detection"))
+        self.btn_to_mean.grid(row=4, column=0, pady=15,padx=5, sticky='w')
 
         # GAUSSIAN FILTER
         self.btn_to_gaussian = ttk.Radiobutton(self.tool_bar, text="Gaussian Blur", value=11,
-                                          style='info.TRadiobutton',command=lambda:self.filter_apply("Gaussian"))
-        self.btn_to_gaussian.grid(row=6, column=0, padx=25, pady=10, sticky='w')
+                                          style=rb_s,command=lambda:self.filter_apply("Gaussian"))
+        self.btn_to_gaussian.grid(row=4, column=1, pady=15,padx=5, sticky='w')
 
         # UNSHARP FILTER
-        self.btn_to_unsharp = ttk.Radiobutton(self.tool_bar, text="Unsharp", value=12,
-                                          style='info.TRadiobutton', command=lambda:self.filter_apply("Unsharp"))
-        self.btn_to_unsharp.grid(row=6, column=1, padx=25, pady=10, sticky='w')
+        self.btn_to_hsv = ttk.Radiobutton(self.tool_bar, text="HSV", value=12,
+                                          style=rb_s, command=lambda:self.filter_apply("Hsv"))
+        self.btn_to_hsv.grid(row=4, column=2, pady=15,padx=5, sticky='w')
 
+        # FRAME UNTUK MENAMPUNG RADIO BUTTON YANG BERISI FILTER UNTUK EDGE DETECTION
+        self.tool_bar_2 = Frame(self.frame1, width=180, height=200, bg="#3f3f3f")
+        self.tool_bar_2.grid(row=1, column=0, padx=10, pady=10, sticky='w')
+
+        self.icon_filter_2 = PhotoImage(file="resources/icon/filter_icon.png")
+        self.filter_2 = Label(self.tool_bar_2, image=self.icon_filter_2, text="Edge Detection", compound='left',
+                              bg="#FD7014")
+        self.filter_2.grid(row=0, column=0, ipadx=90, stick="w", columnspan=3)
+
+        # RB BAGIAN CANNY
+        ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
+        self.btn_to_canny = ttk.Radiobutton(self.tool_bar_2, text="Canny", value=13, style=rb_s,
+                                            command=lambda: self.filter_apply("Canny"))
+        self.btn_to_canny.grid(row=1, column=0, pady=10, padx=15, sticky='w')
+
+        # RB BAGIAN SOBEL
+        self.btn_to_sobel = ttk.Radiobutton(self.tool_bar_2, text="Sobel", value=14, style=rb_s,
+                                            command=lambda: self.filter_apply("Sobel"))
+        self.btn_to_sobel.grid(row=1, column=1, pady=10, padx=15, sticky='w')
+
+        # RB BAGIAN PREWITT
+        self.btn_to_prewitt = ttk.Radiobutton(self.tool_bar_2, text="Prewitt", value=15, style=rb_s,
+                                              command=lambda: self.filter_apply("Prewitt"))
+        self.btn_to_prewitt.grid(row=1, column=2, pady=10, padx=15, sticky='w')
 
 # ==================================================================================================================#
 # ==================================================== FILTER 2 ====================================================#
@@ -455,39 +494,70 @@ class Window_1:
         # RADIO BUTTON BUAT BAGIAN FILTERNYA PADA TAB2
 
         # FRAME UNTUK MENAMPUNG RADIO BUTTON YANG BERISI FILTER
-        self.tool_bar = Frame(self.frame2, width=180, height=200, bg="#3f3f3f")
-        self.tool_bar.grid(row=0, column=0, padx=10, pady=10, sticky='w')
+        self.tool_bar_r2 = Frame(self.frame2, width=180, height=200, bg="#3f3f3f")
+        self.tool_bar_r2.grid(row=1, column=0, padx=10, pady=10, sticky='w')
 
-        self.icon_filter_2 = PhotoImage(file="resources/icon/filter_icon.png")
-        self.filter_2 = Label(self.tool_bar, image=self.icon_filter_2, text="Filter", compound='left', bg="#FD7014")
-        self.filter_2.grid(row=0, column=0, ipadx=35, columnspan=2,stick="n")
+        self.icon_filter_r2 = PhotoImage(file="resources/icon/filter_icon.png")
+        self.morph = Label(self.tool_bar_r2, image=self.icon_filter_2, text="Morfologi", compound='left',bg="#FD7014")
+        self.morph.grid(row=0, column=0, ipadx=110,stick="w",columnspan=3)
 
-        # RB BAGIAN CANNY
+        # RB BAGIAN EROSI
         ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
-        self.btn_to_canny = ttk.Radiobutton(self.tool_bar, text="Canny", value=13, style='info.TRadiobutton',
-                                            command=lambda: self.filter_apply("Canny"))
-        self.btn_to_canny.grid(row=1, column=0, padx=25, pady=10, sticky='w')
+        self.btn_to_eros = ttk.Radiobutton(self.tool_bar_r2, text="Erosi", value=16, style=rb_s,
+                                            command=lambda: self.filter_apply("Erosi"))
+        self.btn_to_eros.grid(row=2, column=0, padx=15, pady=5, sticky='w',rowspan=2)
 
-        # RB BAGIAN SOBEL
-        self.btn_to_canny = ttk.Radiobutton(self.tool_bar, text="Sobel", value=14, style='info.TRadiobutton',
-                                           command=lambda: self.filter_apply("Sobel"))
-        self.btn_to_canny.grid(row=1, column=1, padx=25, pady=10, sticky='w',ipadx=30)
+        # SPACE
+        Label(self.tool_bar_r2, text="", anchor="n",bg="#3f3f3f").grid(row=1,column=1,pady=1)
+        # COSTUME ANGLE
+        ttk.Label(self.tool_bar_r2, text="St. El. Size", style='warning.Inverse.TLabel',anchor="n",width=21).grid(row=2,padx=10,column=1,ipadx=3, sticky="w")
+        self.costume_st_element = ttk.Entry(self.tool_bar_r2, style='info.TEntry',text="",width=21)
+        self.costume_st_element.grid(row=3, column=1, sticky="w", padx=10)
 
-        # RB BAGIAN PREWITT
-        self.btn_to_canny = ttk.Radiobutton(self.tool_bar, text="Prewitt", value=15, style='info.TRadiobutton',
-                                            command=lambda: self.filter_apply("Prewitt"))
-        self.btn_to_canny.grid(row=2, column=0, padx=25, pady=10, sticky='w',ipadx=25)
+        # SPACE
+        Label(self.tool_bar_r2, text="", anchor="n", bg="#3f3f3f").grid(row=4, column=1, pady=1)
+        # RB BAGIAN DILASI
+        self.btn_to_dilasi = ttk.Radiobutton(self.tool_bar_r2, text="Dilasi", value=17, style=rb_s,command=lambda: self.filter_apply("Dilasi"))
+        self.btn_to_dilasi.grid(row=5, column=0, padx=15, pady=5, sticky='w',rowspan=2)
+
+        # SPACE
+        Label(self.tool_bar_r2, text="", anchor="n", bg="#3f3f3f").grid(row=1, column=1, pady=1)
+        # COSTUME ANGLE
+        ttk.Label(self.tool_bar_r2, text="St. El. Size", style='warning.Inverse.TLabel', anchor="n",width=21).grid(row=5, column=1,padx=10,ipadx=3, sticky="w")
+        self.costume_st_element_2 = ttk.Entry(self.tool_bar_r2, style='info.TEntry', text="", width=21)
+        self.costume_st_element_2.grid(row=6, column=1, sticky="w", padx=10)
+
+        # SPACE
+        Label(self.tool_bar_r2, text="", anchor="n", bg="#3f3f3f").grid(row=7, column=0)
+
+        # FRAME UNTUK MENAMPUNG RADIO BUTTON YANG BERISI FILTER
+        self.tool_bar_r3 = Frame(self.frame2, width=180, height=200, bg="#3f3f3f")
+        self.tool_bar_r3.grid(row=2, column=0, padx=10, pady=10, sticky='w')
+
+        self.icon_filter_r3 = PhotoImage(file="resources/icon/filter_icon.png")
+        self.morph_2 = Label(self.tool_bar_r3, image=self.icon_filter_2, text="Morfologi", compound='left', bg="#FD7014")
+        self.morph_2.grid(row=0, column=0, ipadx=110, stick="we", columnspan=3)
+
+        # RB BAGIAN OPENING
+        self.btn_to_opening = ttk.Radiobutton(self.tool_bar_r3, text="Opening", value=18, style=rb_s,
+                                              command=lambda: self.filter_apply("Opening"))
+        self.btn_to_opening.grid(row=1, column=0, padx=30, pady=15, sticky='we')
+        # RB BAGIAN CLOSING
+        self.btn_to_closing = ttk.Radiobutton(self.tool_bar_r3, text="Closing", value=19, style=rb_s,
+                                           command=lambda: self.filter_apply("Closing"))
+        self.btn_to_closing.grid(row=1, column=1, padx=30, pady=15, sticky='we')
+
 
 #==================================================================================================================#
 #==================================================== FILTER 3 ====================================================#
 #==================================================================================================================#
         # FRAME ATAS BUAT KONTEN ROTASI
         self.tool_bar_2_1 = Frame(self.frame3, width=180, height=200, bg="#3f3f3f")
-        self.tool_bar_2_1.grid(row=0, column=0, padx=10, pady=10, sticky='w')
+        self.tool_bar_2_1.grid(row=0, column=0,  pady=10,padx=5, sticky='w')
 
         self.icon_rotate = PhotoImage(file="resources/icon/rotation_icon.png")
         self.rotate = Label(self.tool_bar_2_1, image=self.icon_rotate, text=" Rotation", compound='left', bg="#FD7014")
-        self.rotate.grid(row=0, column=0, ipadx=35, columnspan=2)
+        self.rotate.grid(row=0, column=0, ipadx=108, columnspan=3)
 
         rotate_var = IntVar()
         # Rotasi 90 Derajat
@@ -521,11 +591,11 @@ class Window_1:
 
         # FRAME BAWAH BUAT KONTEN TRANSLASI
         self.tool_bar_2_2 = Frame(self.frame3, width=180, height=200, bg="#444444")
-        self.tool_bar_2_2.grid(row=1, column=0, padx=5, pady=10, ipadx=30,sticky='w')
+        self.tool_bar_2_2.grid(row=1, column=0, padx=5, pady=10,sticky='w')
 
-        self.icon_translation = PhotoImage(file="resources/icon/rotation_icon.png")
-        self.translation = Label(self.tool_bar_2_2, image=self.icon_rotate,width=75, text=" Translation", compound='left', bg="#FD7014")
-        self.translation.grid(row=0, column=1, ipadx=35,padx=5,pady=3, columnspan=2,sticky="e")
+        self.icon_translation = PhotoImage(file="resources/icon/flip_icon.png")
+        self.trans = Label(self.tool_bar_2_2, image=self.icon_translation, text=" Translation", compound='left', bg="#FD7014")
+        self.trans.grid(row=0, column=0, ipadx=100, columnspan=3)
 
         self.trans_width = ttk.Entry(self.tool_bar_2_2, style='info.TEntry',width=8)
         self.trans_width.insert(0, 'width')
@@ -537,7 +607,7 @@ class Window_1:
 
         self.btn_trans = ttk.Button(self.tool_bar_2_2, text="Trans", style='warning.Outline.TButton', width=6,
                                     command=lambda:self.operation_apply("translation"))
-        self.btn_trans.grid(row=1, column=2, padx=1,sticky='e')
+        self.btn_trans.grid(row=1, column=2, padx=1,sticky='w')
 
 # ==================================================================================================================#
 # ==================================================== FILTER 3 ====================================================#
@@ -551,7 +621,7 @@ class Window_1:
 
         self.icon_flip = PhotoImage(file="resources/icon/flip_icon.png")
         self.flip = Label(self.tool_bar_4, image=self.icon_flip, text=" Flip", compound='left', bg="#FD7014")
-        self.flip.grid(row=0, column=0, ipadx=35, columnspan=2)
+        self.flip.grid(row=0, column=0, ipadx=125, columnspan=2)
 
         # CB BUAT FLIP
         ttk.Style().configure('Squaretoggle.Toolbutton', background="#3f3f3f", font=('Helvetica', 10))
@@ -570,24 +640,23 @@ class Window_1:
 
         # FRAME BAWAH BUAT KONTEN SCALING / RESIZE
         self.tool_bar_4_2 = Frame(self.frame4, width=180, height=200, bg="#444444")
-        self.tool_bar_4_2.grid(row=1, column=0, padx=5, pady=10, ipadx=30, sticky='w')
+        self.tool_bar_4_2.grid(row=1, column=0, padx=5, pady=10, sticky='w')
 
         self.icon_resize = PhotoImage(file="resources/icon/resize_icon.png")
-        self.resize = Label(self.tool_bar_4_2, image=self.icon_resize, width=75, text=" Resize",
-                                 compound='left', bg="#FD7014")
-        self.resize.grid(row=0, column=1, ipadx=35, padx=5, pady=3, columnspan=2, sticky="e")
+        self.resize = Label(self.tool_bar_4_2, image=self.icon_resize, text=" Resize", compound='left', bg="#FD7014")
+        self.resize.grid(row=0, column=0,columnspan=3, ipadx=115)
 
         self.new_width = ttk.Entry(self.tool_bar_4_2,style='info.TEntry', width=8)
         self.new_width.insert(0, 'width')
-        self.new_width.grid(row=1, column=0, sticky="e", padx=13, pady=8)
+        self.new_width.grid(row=1, column=0, sticky="e", padx=5, pady=8)
 
         self.new_height = ttk.Entry(self.tool_bar_4_2, style='info.TEntry', width=8)
         self.new_height.insert(0, 'height')
-        self.new_height.grid(row=1, column=1, sticky="w", padx=4, pady=8)
+        self.new_height.grid(row=1, column=1, sticky="w", padx=5, pady=8)
 
         self.btn_resize = ttk.Button(self.tool_bar_4_2, text="Resize", style='warning.Outline.TButton', width=6,
                                     command=lambda: self.operation_apply("resize"))
-        self.btn_resize.grid(row=1, column=2, padx=1, sticky='e')
+        self.btn_resize.grid(row=1, column=2, sticky="w", padx=5, pady=8)
 
 #==================================================================================================================#
 #==================================================== FILTER 4 ====================================================#
@@ -749,7 +818,7 @@ class Window_1:
     def preview_img(self, image):
 
         if self.state == True:
-            self.window.geometry("1530x780+1+1")
+            self.window.geometry("1530x800+1+1")
             self.sf = ScrolledFrame(self.gambar_frame, width=800, height=690)
             self.sf.grid(column=0, row=0)
 
@@ -760,7 +829,7 @@ class Window_1:
             self.tambah_gambar()
 
         else :
-            self.window.geometry("1380x750+1+1")
+            self.window.geometry("1380x800+1+1")
 
             self.image_r = image.resize((680, 630), Image.ANTIALIAS)
             self.image_r = ImageTk.PhotoImage(self.image_r)
@@ -804,7 +873,7 @@ class Window_1:
         elif self.set_filter == "Unsharp":
             img_filter = self.filter_img.image_to_unsharp(img)
 
-
+    # PAKE SLIDER
         elif self.set_filter == "Threshold":
             self.label_parameter.config(text=str(int(self.scale.get())))
             img_filter = self.filter_img.image_to_threshold(img, self.scale)
@@ -815,12 +884,27 @@ class Window_1:
             self.label_parameter_divide.config(text=f'{(self.scale_divide.get()):.2f}')
             img_filter = self.filter_img.image_to_dark(img, self.scale_divide)
 
+    # BAGIAN EDGE DETECTION
         elif self.set_filter == "Canny":
             img_filter = self.filter_img.image_to_canny(img)
         elif self.set_filter == "Sobel":
             img_filter = self.filter_img.image_to_sobel(img)
         elif self.set_filter == "Prewitt":
             img_filter = self.filter_img.image_to_prewitt(img)
+
+    # BAGIAN MORFOLOGI
+        elif self.set_filter == "Erosi":
+            k = int(self.costume_st_element.get())
+            kernel = cv.getStructuringElement(cv.MORPH_RECT, (k, k))
+            img_filter = self.filter_img.image_to_erosi(img,kernel)
+        elif self.set_filter == "Dilasi":
+            k = int(self.costume_st_element_2.get())
+            kernel = cv.getStructuringElement(cv.MORPH_RECT, (k, k))
+            img_filter = self.filter_img.image_to_dilasi(img,kernel)
+        elif self.set_filter == "Closing":
+            img_filter = self.filter_img.image_to_closing(img)
+        elif self.set_filter == "Opening":
+            img_filter = self.filter_img.image_to_opening(img)
 
         try:
             cv.imwrite("output.png", img_filter)
@@ -858,21 +942,20 @@ class Window_1:
             img_operate = self.img_operation.image_to_rotated(img,int(self.costume_angle.get()))
 
         # UNTUK IMAGE FLIP
-        if self.set_operation == "horizontal":
+        elif self.set_operation == "horizontal":
             img_operate = self.img_operation.image_to_flip_horizontal(img)
         elif self.set_operation == "vertical":
             img_operate = self.img_operation.image_to_flip_vertical(img)
 
         # UNTUK IMAGE TRANSLATION
-        if self.set_operation == "translation":
+        elif self.set_operation == "translation":
             location = str(self.file_location)
             d_width = self.trans_width.get()
             d_height = self.trans_height.get()
             img_operate = self.img_operation.image_to_trans(location,d_width,d_height)
 
         # UNTUK IMAGE RESIZED
-
-        if self.set_operation == "resize":
+        elif self.set_operation == "resize":
             new_width = int(self.new_width.get())
             new_height = int(self.new_height.get())
             img_operate = self.img_operation.image_to_resize(img, new_width, new_height)
