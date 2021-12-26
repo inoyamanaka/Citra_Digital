@@ -111,6 +111,7 @@ class Filter:
         # img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
         image2 = Image.fromarray(img.astype('uint8'))
         new_image = image2.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
+        new_image = Image
 
         new_image.save("output.png")
 
@@ -160,26 +161,82 @@ class Filter:
         return img_prewitt
 
     def image_to_erosi(self,img,kernel):
+        img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
         imgErode = cv.erode(img, kernel=kernel, iterations=1)
         return imgErode
 
     def image_to_dilasi(self,img,kernel):
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         imgDilate = cv.dilate(img, kernel=kernel, iterations=1)
         return imgDilate
 
-    def image_to_opening(self,img):
-        se = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+    def image_to_opening(self,img,se=cv.getStructuringElement(cv.MORPH_RECT,(3,3))):
         # img_canny = self.image_to_canny(img)
         img = self.image_to_erosi(img,se)
         img = self.image_to_dilasi(img,se)
         return img
 
-    def image_to_closing(self,img):
-        se = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+    def image_to_closing(self,img,se=cv.getStructuringElement(cv.MORPH_RECT,(3,3))):
         img_canny = self.image_to_canny(img)
         img = self.image_to_dilasi(img_canny,se)
         img = self.image_to_erosi(img,se)
         return img
+
+    def image_to_gradient(self,img):
+        filterSize = (12, 5)
+        kernel = cv.getStructuringElement(cv.MORPH_RECT,filterSize)
+        input_image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+        # ============================= LIBRARY ==============================
+        gradient_img = cv.morphologyEx(input_image,cv.MORPH_GRADIENT,kernel)
+        # ====================================================================
+
+        # =========================== SCRATCH ================================
+        # dilasi_img = self.image_to_dilasi(img,kernel)
+        # erosi_img = self.image_to_erosi(img,kernel)
+        # gradient_img = dilasi_img - erosi_img
+        # gradient_img = cv.cvtColor(gradient_img,cv.COLOR_RGB2GRAY)
+        # ====================================================================
+        return gradient_img
+
+    def image_to_blackhat(self,img):
+        filterSize = (12, 5)
+        kernel = cv.getStructuringElement(cv.MORPH_RECT,filterSize)
+        input_image = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+
+        # ============================= LIBRARY ==============================
+        blackhat_img = cv.morphologyEx(input_image,cv.MORPH_BLACKHAT,kernel)
+        # ====================================================================
+
+        # =========================== SCRATCH ================================
+        # closing_img = self.image_to_dilasi(img, kernel)
+        # closing_img = self.image_to_erosi(closing_img, kernel)
+
+        # blackhat_img = closing_img - img
+        # blackhat_img = cv.cvtColor(blackhat_img, cv.COLOR_RGB2GRAY)
+        # ====================================================================
+        return blackhat_img
+
+    def image_to_tophat(self,img):
+        filterSize = (12, 5)
+        kernel = cv.getStructuringElement(cv.MORPH_RECT,filterSize)
+        input_image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+        # ============================= LIBRARY ==============================
+        tophat_img = cv.morphologyEx(input_image,cv.MORPH_TOPHAT,kernel)
+        # ====================================================================
+
+        # =========================== SCRATCH ================================
+        # opening_img
+        # opening_img = self.image_to_erosi(img,kernel)
+        # opening_img = self.image_to_dilasi(opening_img,kernel)
+        #
+        # tophat_img = img - opening_img
+        # tophat_img = cv.cvtColor(tophat_img, cv.COLOR_RGB2GRAY)
+        # ====================================================================
+
+        return tophat_img
+
 class Image_operation:
     def __int__(self):
         pass
@@ -401,7 +458,7 @@ class Window_1:
         self.filter.grid(row=0, column=0, ipadx=120,stick="w",columnspan=3)
 
         # RB BAGIAN GRAYSCALE
-        ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
+        ttk.Style().configure('info.TRadiobutton', background="#3F3F3F", foreground='white', font=('Helvetica', 8))
         self.btn_to_gray = ttk.Radiobutton(self.tool_bar, text="Grayscale", value=1, style=rb_s,
                                            command=lambda:self.filter_apply("Gray"))
         self.btn_to_gray.grid(row=1, column=0, pady=15,padx=5, sticky='w')
@@ -541,11 +598,27 @@ class Window_1:
         # RB BAGIAN OPENING
         self.btn_to_opening = ttk.Radiobutton(self.tool_bar_r3, text="Opening", value=18, style=rb_s,
                                               command=lambda: self.filter_apply("Opening"))
-        self.btn_to_opening.grid(row=1, column=0, padx=30, pady=15, sticky='we')
+        self.btn_to_opening.grid(row=1, column=0, padx=10, pady=7, sticky='we')
+
         # RB BAGIAN CLOSING
         self.btn_to_closing = ttk.Radiobutton(self.tool_bar_r3, text="Closing", value=19, style=rb_s,
                                            command=lambda: self.filter_apply("Closing"))
-        self.btn_to_closing.grid(row=1, column=1, padx=30, pady=15, sticky='we')
+        self.btn_to_closing.grid(row=1, column=1, padx=10, pady=7, sticky='we')
+
+        # RB BAGIAN TOPHAT
+        self.btn_to_gradient = ttk.Radiobutton(self.tool_bar_r3, text="Gradient", value=20, style=rb_s,
+                                              command=lambda: self.filter_apply("Gradient"))
+        self.btn_to_gradient.grid(row=2, column=0, padx=10, pady=7, sticky='we')
+
+        # RB BAGIAN TOPHAT
+        self.btn_to_tophat = ttk.Radiobutton(self.tool_bar_r3, text="Tophat", value=21, style=rb_s,
+                                             command=lambda: self.filter_apply("Tophat"))
+        self.btn_to_tophat.grid(row=2, column=1, padx=10, pady=7, sticky='we')
+
+        # RB BAGIAN BLACKHAT
+        self.btn_to_blackhat = ttk.Radiobutton(self.tool_bar_r3, text="Blackhat", value=22, style=rb_s,
+                                             command=lambda: self.filter_apply("Blackhat"))
+        self.btn_to_blackhat.grid(row=2, column=2, padx=10, pady=7, sticky='we')
 
 
 #==================================================================================================================#
@@ -561,22 +634,22 @@ class Window_1:
 
         rotate_var = IntVar()
         # Rotasi 90 Derajat
-        self.btn_to_90 = ttk.Radiobutton(self.tool_bar_2_1, text="90 Derajat\t", value=7, style='info.TRadiobutton',
+        self.btn_to_90 = ttk.Radiobutton(self.tool_bar_2_1, text="90 Derajat\t", value=100, style='info.TRadiobutton',
                                          command=lambda: self.operation_apply(90))
         self.btn_to_90.grid(row=1, column=0, pady=10, padx=25, sticky='w')
 
         # Rotasi 180 Derajat
-        self.btn_to_180 = ttk.Radiobutton(self.tool_bar_2_1, text="180 Derajat", value=8, style='info.TRadiobutton',
+        self.btn_to_180 = ttk.Radiobutton(self.tool_bar_2_1, text="180 Derajat", value=101, style='info.TRadiobutton',
                                           command=lambda: self.operation_apply(180))
         self.btn_to_180.grid(row=1, column=1, pady=10, padx=25, sticky='w')
 
         # Rotasi 270 Derajat
-        self.btn_to_270 = ttk.Radiobutton(self.tool_bar_2_1, text="270 Derajat", value=9, style='info.TRadiobutton',
+        self.btn_to_270 = ttk.Radiobutton(self.tool_bar_2_1, text="270 Derajat", value=102, style='info.TRadiobutton',
                                           command=lambda: self.operation_apply(270))
         self.btn_to_270.grid(row=2, column=0, pady=10, padx=25, sticky='w')
 
         # Rotasi 360 Derajat
-        self.btn_to_360 = ttk.Radiobutton(self.tool_bar_2_1, text="360 Derajat", value=10, style='info.TRadiobutton',
+        self.btn_to_360 = ttk.Radiobutton(self.tool_bar_2_1, text="360 Derajat", value=103, style='info.TRadiobutton',
                                           command=lambda: self.operation_apply(360))
         self.btn_to_360.grid(row=2, column=1, pady=10, padx=25, sticky='w')
 
@@ -897,14 +970,22 @@ class Window_1:
             k = int(self.costume_st_element.get())
             kernel = cv.getStructuringElement(cv.MORPH_RECT, (k, k))
             img_filter = self.filter_img.image_to_erosi(img,kernel)
+            self.set_filter = f"Erosi K({k}x{k})"
         elif self.set_filter == "Dilasi":
             k = int(self.costume_st_element_2.get())
             kernel = cv.getStructuringElement(cv.MORPH_RECT, (k, k))
             img_filter = self.filter_img.image_to_dilasi(img,kernel)
+            self.set_filter = f"Dilasi K({k}x{k})"
         elif self.set_filter == "Closing":
             img_filter = self.filter_img.image_to_closing(img)
         elif self.set_filter == "Opening":
             img_filter = self.filter_img.image_to_opening(img)
+        elif self.set_filter == "Gradient":
+            img_filter = self.filter_img.image_to_gradient(img)
+        elif self.set_filter == "Tophat":
+            img_filter = self.filter_img.image_to_tophat(img)
+        elif self.set_filter == "Blackhat":
+            img_filter = self.filter_img.image_to_blackhat(img)
 
         try:
             cv.imwrite("output.png", img_filter)
