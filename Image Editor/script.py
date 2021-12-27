@@ -237,6 +237,45 @@ class Filter:
 
         return tophat_img
 
+
+    def image_to_segementation(self,img,bw,ba,iterasi):
+        roi = img[0:img.shape[0], 0:img.shape[1]]
+        roi = cv.cvtColor(roi,cv.COLOR_BGR2RGB)
+        img_gray = cv.cvtColor(roi, cv.COLOR_BGR2GRAY)
+
+        # Image blur : Gaussian blur
+        k = 15
+        img_blur = cv.GaussianBlur(img_gray, (k, k), 0)
+
+        # Threshold image
+        thresh = cv.adaptiveThreshold(img_blur, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 1)
+
+        # kernel = np.ones((3, 3), np.uint8)
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+
+        # Morphology
+        img_erode = cv.erode(thresh, kernel, iterations=iterasi)
+        img_closing = cv.morphologyEx(img_erode, cv.MORPH_CLOSE, kernel, iterations=iterasi)
+        img_closing = cv.dilate(img_closing, kernel, iterations=iterasi)
+
+        cont_img = img_closing.copy()
+        contours, hierarchy = cv.findContours(cont_img, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+        for cnt in contours:
+            area = cv.contourArea(cnt)
+
+            if area < bw or area > ba:
+                continue
+            if len(cnt) < 1:
+                continue
+
+            ellipse = cv.fitEllipse(cnt)
+            cv.ellipse(roi, ellipse, (0, 255, 0), 3)
+
+
+        return roi
+
+
 class Image_operation:
     def __int__(self):
         pass
@@ -683,7 +722,7 @@ class Window_1:
         self.btn_trans.grid(row=1, column=2, padx=1,sticky='w')
 
 # ==================================================================================================================#
-# ==================================================== FILTER 3 ====================================================#
+# ==================================================== FILTER 4 ====================================================#
 # ==================================================================================================================#
 
         # RADIO BUTTON BUAT BAGIAN FILTERNYA
@@ -732,8 +771,40 @@ class Window_1:
         self.btn_resize.grid(row=1, column=2, sticky="w", padx=5, pady=8)
 
 #==================================================================================================================#
-#==================================================== FILTER 4 ====================================================#
+#==================================================== FILTER 5 ====================================================#
 #==================================================================================================================#
+
+        # RADIO BUTTON BUAT BAGIAN FILTERNYA
+
+        # MEMBUAT FRAME UNTUK MENAMPUNG SESUATU YANG BERHUBUNGAN DENGAN FLIP
+        self.tool_bar_5 = Frame(self.frame5, width=180, height=200, bg="#444444")
+        self.tool_bar_5.grid(row=0, column=0, padx=10, pady=10, sticky='w')
+
+        self.icon_segementation = PhotoImage(file="resources/icon/flip_icon.png")
+        self.flip = Label(self.tool_bar_5, image=self.icon_flip, text="Segementataion", compound='left', bg="#FD7014")
+        self.flip.grid(row=0, column=0, ipadx=80, columnspan=3)
+
+        # RB BAGIAN SEGMENTASI
+        ttk.Style().configure('info.TRadiobutton', background="#444444", foreground='white', font=('Helvetica', 8))
+
+        # COSTUME BATAS
+        self.batas_bawah = ttk.Entry(self.tool_bar_5, style='info.TEntry', width=8)
+        self.batas_bawah.insert(0, 'Minimal')
+        self.batas_bawah.grid(row=4, column=0, sticky="e", padx=13, pady=8)
+
+        self.batas_atas = ttk.Entry(self.tool_bar_5, style='info.TEntry', width=8)
+        self.batas_atas.insert(0, 'Maksimal')
+        self.batas_atas.grid(row=4, column=1, sticky="w", padx=4, pady=8)
+
+        self.btn_to_segmen = ttk.Button(self.tool_bar_5, text="Segmentate", style='warning.Outline.TButton', width=6,
+                                     command=lambda: self.filter_apply("Segmentation"))
+        self.btn_to_segmen.grid(row=4, column=2, sticky="w", padx=5, pady=8)
+
+        self.iteration = ttk.Entry(self.tool_bar_5, style='info.TEntry', width=8)
+        self.iteration.insert(1, '1')
+        self.iteration.grid(row=5, column=0, sticky="w", padx=4, pady=8)
+
+
 
 #---------------------------------- MIDDLE FRAME SECTION ----------------------------------#
         """DI BAWAH INI MERUPAKAN SOURCE UNTUK BAGIAN CODE YANG ADA 
@@ -787,6 +858,13 @@ class Window_1:
         self.image_r = ImageTk.PhotoImage(self.image_r)
         self.gambar_2 = Label(self.gambar_frame, image=self.image_r)
         self.gambar_2.grid(row=0, column=0, padx=5, pady=7)
+
+# ==================================================================================================================#
+# ==================================================== FILTER 5 ====================================================#
+# ==================================================================================================================#
+
+
+
 
 #---------------------------------- RIGHT FRAME SECTION ----------------------------------#
         """DI BAWAH INI MERUPAKAN SOURCE UNTUK BAGIAN CODE YANG ADA 
@@ -871,6 +949,9 @@ class Window_1:
             self.image.save("output.png")
             self.image.save("outputori.png")
 
+            self.img_path.clear()
+            self.nama_filter.clear()
+
             self.img_path.append("outputori.png")
             self.nama_filter.append("Original")
 
@@ -912,11 +993,11 @@ class Window_1:
 
   # METHOD UNTUK MEMANGGIL FILTER DARI CLASS LAIN
     def img_to_threshold(self,event):
-        self.filter_apply("threshold")
+        self.filter_apply("Threshold")
     def img_to_bright(self,event):
-        self.filter_apply("brightness")
+        self.filter_apply("Brightness")
     def img_to_dark(self,event):
-        self.filter_apply("darkness")
+        self.filter_apply("Darkness")
 
     def filter_apply(self,filter_set):
         self.set_filter = filter_set
@@ -986,6 +1067,13 @@ class Window_1:
             img_filter = self.filter_img.image_to_tophat(img)
         elif self.set_filter == "Blackhat":
             img_filter = self.filter_img.image_to_blackhat(img)
+
+    # BAGIAN SEGMENTATION
+        elif self.set_filter == "Segmentation":
+            iterasi = int(self.iteration.get())
+            new_ba = int(self.batas_atas.get())
+            new_bw = int(self.batas_bawah.get())
+            img_filter = self.filter_img.image_to_segementation(img,new_bw,new_ba,iterasi)
 
         try:
             cv.imwrite("output.png", img_filter)
